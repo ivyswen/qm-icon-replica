@@ -25,6 +25,8 @@ export default function AppMark({
   bgColor1,
   color2,
   bgAngle = 135,
+  pattern = "none",
+  noise = 0,
   rotation,
   scale,
   dx,
@@ -55,6 +57,8 @@ export default function AppMark({
   bgColor1?: string;
   color2: string;
   bgAngle?: number;
+  pattern?: ExportDesignState["pattern"];
+  noise?: number;
   rotation: number;
   scale: number;
   dx: number;
@@ -84,18 +88,28 @@ export default function AppMark({
       : background === "solid"
         ? { background: bgColor1 || "#f6f7fa" }
         : background === "radial"
-          ? { background: `radial-gradient(circle at 25% 20%, ${color2}, ${bgColor1 || "#f6f7fa"} 72%)` }
+          ? { background: `radial-gradient(circle at 50% 50%, ${bgColor1 || "#f6f7fa"} 0%, ${color2} 100%)` }
           : background === "conic"
-            ? { background: `conic-gradient(from ${bgAngle}deg, ${color2}, ${bgColor1 || "#f6f7fa"}, ${color2})` }
+            ? { background: `conic-gradient(from ${bgAngle}deg at 50% 50%, ${bgColor1 || "#dceee9"}, ${color2}, ${bgColor1 || "#dceee9"})` }
             : background === "image"
               ? { background: `linear-gradient(${bgAngle}deg, ${startBg} 0%, #ffffff 48%, ${color2 || "#fff2d6"} 100%)` }
-              : { background: `linear-gradient(${bgAngle}deg, ${startBg} 0%, #f8fafc 53%, ${color2} 100%)` };
+              : { background: `linear-gradient(${bgAngle}deg, ${startBg} 0%, ${color2} 100%)` };
 
   const pad = Math.max(0, Math.min(35, maskPad));
   const innerSize = 100 - pad * 2;
   const clipPath =
     mask === "circle" ? (
       <circle cx="50" cy="50" r={50 - pad} />
+    ) : mask === "round" ? (
+      <rect x={pad} y={pad} width={innerSize} height={innerSize} rx={16} />
+    ) : mask === "star" ? (
+      <polygon points={`50,${pad + 4} ${63 - pad * 0.2},${35 + pad * 0.1} ${96 - pad},${36 + pad * 0.1} ${69 - pad * 0.3},${56 - pad * 0.1} ${79 - pad * 0.4},${90 - pad} 50,${70 - pad * 0.4} ${21 + pad * 0.4},${90 - pad} ${31 + pad * 0.3},${56 - pad * 0.1} ${4 + pad},${36 + pad * 0.1} ${37 + pad * 0.2},${35 + pad * 0.1}`} />
+    ) : mask === "diamond" ? (
+      <rect x={20 + pad * 0.6} y={20 + pad * 0.6} width={60 - pad * 1.2} height={60 - pad * 1.2} rx="8" transform="rotate(45 50 50)" />
+    ) : mask === "triangle" ? (
+      <polygon points={`50,${pad + 6} ${95 - pad},${94 - pad} ${5 + pad},${94 - pad}`} />
+    ) : mask === "teardrop" ? (
+      <path d={`M50 ${pad + 6} C50 ${pad + 6} ${92 - pad} ${45 + pad * 0.5} ${92 - pad} ${68 - pad * 0.5} A${42 - pad} ${42 - pad} 0 0 1 ${8 + pad} ${68 - pad * 0.5} C${8 + pad} ${45 + pad * 0.5} 50 ${pad + 6} 50 ${pad + 6} Z`} />
     ) : mask === "hex" ? (
       <path d={`M50 ${pad} ${100 - pad} ${pad + 20} ${100 - pad} ${100 - pad - 20} 50 ${100 - pad} ${pad} ${100 - pad - 20} ${pad} ${pad + 20}Z`} />
     ) : mask === "custom" && customMask.trim() ? (
@@ -138,7 +152,63 @@ export default function AppMark({
               <feDropShadow dx="0" dy="0" stdDeviation={Math.max(1, glowBlur / 2)} floodColor={glowColor} floodOpacity=".8" />
             </filter>
           )}
+
+          {/* 7 种图案纹理定义 */}
+          {pattern === "dots" && (
+            <pattern id={`${uid}-pattern`} x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse">
+              <circle cx="6" cy="6" r="1.5" fill="rgba(255,255,255,0.2)" />
+            </pattern>
+          )}
+          {pattern === "stripes" && (
+            <pattern id={`${uid}-pattern`} width="14" height="14" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+              <line x1="0" y1="0" x2="0" y2="14" stroke="rgba(255,255,255,0.2)" strokeWidth="3.5" />
+            </pattern>
+          )}
+          {pattern === "grid" && (
+            <pattern id={`${uid}-pattern`} width="14" height="14" patternUnits="userSpaceOnUse">
+              <path d="M 14 0 L 0 0 0 14" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
+            </pattern>
+          )}
+          {pattern === "checker" && (
+            <pattern id={`${uid}-pattern`} width="16" height="16" patternUnits="userSpaceOnUse">
+              <rect width="8" height="8" fill="rgba(255,255,255,0.16)" />
+              <rect x="8" y="8" width="8" height="8" fill="rgba(255,255,255,0.16)" />
+            </pattern>
+          )}
+          {pattern === "waves" && (
+            <pattern id={`${uid}-pattern`} width="20" height="10" patternUnits="userSpaceOnUse">
+              <path d="M 0 5 Q 5 0 10 5 T 20 5" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
+            </pattern>
+          )}
+          {pattern === "cross" && (
+            <pattern id={`${uid}-pattern`} width="16" height="16" patternUnits="userSpaceOnUse">
+              <path d="M8 3 v10 M3 8 h10" stroke="rgba(255,255,255,0.22)" strokeWidth="1.5" />
+            </pattern>
+          )}
+
+          {/* 噪点滤镜定义 */}
+          {noise > 0 && (
+            <filter id={`${uid}-noise`}>
+              <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
+              <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.5 0" />
+            </filter>
+          )}
         </defs>
+
+        {/* 背景图案层叠加 */}
+        {pattern && pattern !== "none" && (
+          <rect width="100%" height="100%" fill={`url(#${uid}-pattern)`} />
+        )}
+
+        {/* 噪点层叠加 */}
+        {noise > 0 && (
+          <rect
+            width="100%" height="100%"
+            filter={`url(#${uid}-noise)`}
+            opacity={Math.min(1, noise / 100)}
+            style={{ mixBlendMode: "overlay" }}
+          />
+        )}
         <g
           transform={iconTransform}
           clipPath={clipPath ? `url(#${uid}-mask)` : undefined}

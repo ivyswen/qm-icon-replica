@@ -571,6 +571,53 @@ textarea { width: 100%; min-height: 48px; padding: 7px; border: 1px solid var(--
 .svg-code-textarea { width: 100%; height: 85px; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: rgba(0,0,0,0.25); color: #c9d1d9; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9.5px; resize: vertical; box-sizing: border-box; }
 .svg-code-textarea:focus { border-color: var(--teal); outline: none; }
 
+/* ═══════════ 背景设计增强：2x3 模式、渐变预设、图案与噪点 ═══════════ */
+.bg-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: rgba(0,0,0,0.25); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 10px; }
+.bg-type-btn { height: 28px; border: none; border-radius: 6px; background: transparent; color: #8b949e; font-size: 11px; font-weight: 600; cursor: pointer; transition: all .14s; display: flex; align-items: center; justify-content: center; }
+.bg-type-btn:hover { color: #fff; background: rgba(255,255,255,0.06); }
+.bg-type-btn.active { background: #161b22; color: #34d399; border: 1px solid #30363d; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+
+.gradient-preset-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin: 6px 0 10px 0; }
+.gradient-preset-card { height: 26px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); cursor: pointer; transition: transform .12s, border-color .12s, box-shadow .12s; padding: 0; }
+.gradient-preset-card:hover { transform: scale(1.16); border-color: #fff; z-index: 2; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+.gradient-preset-card.active { border-color: #34d399; box-shadow: 0 0 0 2px #34d399; transform: scale(1.1); }
+
+.bg-quick-actions { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+.bg-action-btn { height: 26px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--ink); font-size: 10px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; transition: all .14s; }
+.bg-action-btn:hover { border-color: #34d399; color: #34d399; background: rgba(52,211,153,0.08); }
+
+.pattern-preset-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin: 6px 0 10px 0; }
+.pattern-preset-card { height: 32px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.14); background: rgba(0,0,0,0.3); color: #8b949e; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; cursor: pointer; transition: all .14s; padding: 0; }
+.pattern-preset-card:hover { border-color: rgba(255,255,255,0.3); color: #fff; background: rgba(255,255,255,0.08); }
+.pattern-preset-card.active { border-color: #34d399; color: #34d399; background: rgba(52,211,153,0.12); box-shadow: 0 0 0 1px #34d399; }
+.pattern-preset-card svg { width: 20px; height: 20px; color: inherit; }
+
+/* ═══════════ 设计模板：2x4 拟真微缩图标卡片网格 ═══════════ */
+.template-icon-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 4px 0; }
+.template-icon-card { position: relative; aspect-ratio: 1; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); cursor: pointer; padding: 0; overflow: hidden; background: transparent; transition: transform .14s, border-color .14s, box-shadow .14s; display: flex; align-items: center; justify-content: center; }
+.template-icon-card:hover { transform: scale(1.08); border-color: rgba(255,255,255,0.4); z-index: 2; box-shadow: 0 6px 16px rgba(0,0,0,0.5); }
+.template-icon-card.active { border-color: #34d399; box-shadow: 0 0 0 2px #34d399; }
+.template-icon-card .app-mark { width: 100%; height: 100%; border-radius: 10px; }
+
+/* ═══════════ 高级：4 列形状蒙版卡片网格 ═══════════ */
+.mask-preset-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin: 6px 0 10px 0; }
+.mask-preset-card { height: 52px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.25); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; transition: all .14s; padding: 4px 2px; }
+.mask-preset-card:hover { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.06); }
+.mask-preset-card.active { border-color: #34d399; background: rgba(52,211,153,0.1); box-shadow: 0 0 0 1px #34d399; }
+.mask-preset-card .mask-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
+.mask-preset-card .mask-icon svg { width: 18px; height: 18px; fill: #8b949e; color: #8b949e; transition: fill .14s, color .14s; }
+.mask-preset-card:hover .mask-icon svg { fill: #c9d1d9; color: #c9d1d9; }
+.mask-preset-card.active .mask-icon svg { fill: #34d399; color: #34d399; }
+.mask-preset-card .mask-label { font-size: 9px; font-weight: 500; color: #8b949e; text-align: center; line-height: 1.1; }
+.mask-preset-card:hover .mask-label { color: #c9d1d9; }
+.mask-preset-card.active .mask-label { color: #34d399; font-weight: 600; }
+
+.custom-mask-editor { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.custom-mask-head { display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: var(--ink); }
+.custom-mask-head small { font-size: 9px; color: #8b949e; }
+.custom-mask-textarea { width: 100%; height: 58px; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line); background: rgba(0,0,0,0.3); color: #c9d1d9; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9.5px; resize: vertical; box-sizing: border-box; }
+.custom-mask-textarea:focus { border-color: var(--teal); outline: none; }
+
 @media (max-width: 1120px) {
   .workbench { min-width: 760px; }
   .workspace { grid-template-columns: 215px minmax(360px, 1fr) 230px; gap: 7px; padding-inline: 7px; }

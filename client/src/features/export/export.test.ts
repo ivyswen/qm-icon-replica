@@ -100,11 +100,32 @@ describe("createSvgMarkup - 前景渐变与控制能力 (TDD)", () => {
     expect(svgCircle).toContain('clip-path="url(#app-clip)"');
   });
 
-  it("导出的 SVG 必须包含 50% 居中缩放组，确保内部图标与画布预览 100% 一致", () => {
-    const svg = createSvgMarkup(baseState);
-    expect(svg).toContain('transform="translate(50 50) scale(0.5) translate(-50 -50)"');
-    expect(svg).toContain('clip-path="url(#app-clip)"');
+  it("当设置 pattern 为 dots 或 grid 时，导出的 SVG 必须包含对应的 pattern 定义与填充图层", () => {
+    const svgDots = createSvgMarkup({ ...baseState, pattern: "dots" });
+    expect(svgDots).toContain('id="bg-pattern"');
+    expect(svgDots).toContain('fill="url(#bg-pattern)"');
+
+    const svgGrid = createSvgMarkup({ ...baseState, pattern: "grid" });
+    expect(svgGrid).toContain('id="bg-pattern"');
+    expect(svgGrid).toContain('fill="url(#bg-pattern)"');
+  });
+
+  it("支持多种几何形状蒙版（star, diamond, triangle, teardrop, round 等）", () => {
+    const svgStar = createSvgMarkup({ ...baseState, mask: "star" });
+    expect(svgStar).toContain('<polygon points="50,4');
+    expect(svgStar).toContain('clip-path="url(#app-clip)"');
+
+    const svgDiamond = createSvgMarkup({ ...baseState, mask: "diamond" });
+    expect(svgDiamond).toContain('transform="rotate(45 50 50)"');
+
+    const svgTriangle = createSvgMarkup({ ...baseState, mask: "triangle" });
+    expect(svgTriangle).toContain('<polygon points="50,6 95,94 5,94"');
+
+    const svgTeardrop = createSvgMarkup({ ...baseState, mask: "teardrop" });
+    expect(svgTeardrop).toContain('<path d="M50 6');
   });
 });
+
+
 
 

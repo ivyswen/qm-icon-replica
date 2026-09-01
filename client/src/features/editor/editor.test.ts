@@ -2,17 +2,16 @@ import { describe, expect, it } from "vitest";
 import { DESIGN_TEMPLATES, type DesignTemplateKey } from "./data/templates";
 
 describe("DESIGN_TEMPLATES - 设计模板预设 (TDD)", () => {
-  it("必须包含核心与扩展的 9 大设计模板", () => {
+  it("必须包含核心的 8 大拟真设计模板", () => {
     const keys: DesignTemplateKey[] = [
-      "清爽薄荷",
-      "暖阳渐变",
-      "墨色印章",
-      "赛博霓虹",
-      "深邃星空",
-      "极简暗黑",
-      "活力蜜桃",
-      "极客终端",
-      "皇家曜金",
+      "青金火箭",
+      "极光翠绿",
+      "莓果粉红",
+      "深海靛蓝",
+      "霓虹幻紫",
+      "极简黑白",
+      "薄荷青绿",
+      "网格暗金",
     ];
     for (const key of keys) {
       expect(DESIGN_TEMPLATES[key]).toBeDefined();
@@ -22,24 +21,22 @@ describe("DESIGN_TEMPLATES - 设计模板预设 (TDD)", () => {
     }
   });
 
-  it("赛博霓虹模板应具备渐变前景与青蓝/紫色调发光特效", () => {
-    const neon = DESIGN_TEMPLATES["赛博霓虹"];
-    expect(neon.fgType).toBe("gradient");
-    expect(neon.glowEnabled).toBe(true);
-    expect(neon.glowColor).toBe("#00f0ff");
+  it("深海靛蓝模板应具备深海蓝渐变与描边特效", () => {
+    const blue = DESIGN_TEMPLATES["深海靛蓝"];
+    expect(blue.background).toBe("linear");
+    expect(blue.strokeEnabled).toBe(true);
+    expect(blue.strokeColor).toBe("#60a5fa");
   });
 
-  it("深邃星空模板应配置星辰图形与径向/深空渐变背景", () => {
-    const galaxy = DESIGN_TEMPLATES["深邃星空"];
-    expect(galaxy.shape).toBe("star");
-    expect(galaxy.background).toBe("radial");
-    expect(galaxy.glowEnabled).toBe(true);
+  it("网格暗金模板应配置暗夜背景与网格 pattern", () => {
+    const gold = DESIGN_TEMPLATES["网格暗金"];
+    expect(gold.pattern).toBe("grid");
+    expect(gold.fg).toBe("#facc15");
   });
 
-  it("极客终端模板应配置代码符号与黑客绿发光", () => {
-    const terminal = DESIGN_TEMPLATES["极客终端"];
-    expect(terminal.shape).toBe("code");
-    expect(terminal.fg).toBe("#22c55e");
-    expect(terminal.glowEnabled).toBe(true);
+  it("极简黑白模板应配置高对比纯白纯黑", () => {
+    const mono = DESIGN_TEMPLATES["极简黑白"];
+    expect(mono.bgColor1).toBe("#ffffff");
+    expect(mono.fg).toBe("#0f172a");
   });
 });

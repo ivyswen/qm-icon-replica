@@ -3,6 +3,7 @@
  * 布局以顶部工具栏、左控制栏、中央画布、右预览栏、底部导出栏为核心。
  */
 import {
+  ArrowLeftRight,
   ChevronDown,
   ChevronUp,
   Code,
@@ -64,6 +65,9 @@ import {
   HISTORY_STORAGE_KEY,
   RANDOM_COLORS,
   SHAPE_OPTIONS,
+  GRADIENT_PRESETS,
+  PATTERN_OPTIONS,
+  MASK_OPTIONS,
   readSavedDraft,
   saveSavedDraft,
   clearSavedDraft,
@@ -130,6 +134,8 @@ export default function Home() {
   const [bgColor1, setBgColor1] = useState(initialDraft.bgColor1);
   const [color2, setColor2] = useState(initialDraft.color2);
   const [bgAngle, setBgAngle] = useState(initialDraft.bgAngle);
+  const [pattern, setPattern] = useState<ExportDesignState["pattern"]>(initialDraft.pattern || "none");
+  const [noise, setNoise] = useState<number>(initialDraft.noise || 0);
 
   const [scale, setScale] = useState(initialDraft.scale);
   const [dx, setDx] = useState(initialDraft.dx);
@@ -316,6 +322,8 @@ export default function Home() {
     badgeText,
     badgeColor,
     badgePosition,
+    pattern,
+    noise,
     shadow,
   });
 
@@ -331,6 +339,8 @@ export default function Home() {
     setBgColor1(snapshot.bgColor1 || "#dceee9");
     setColor2(snapshot.color2);
     setBgAngle(snapshot.bgAngle ?? 135);
+    setPattern(snapshot.pattern || "none");
+    setNoise(snapshot.noise || 0);
     setRotation(snapshot.rotation);
     setScale(snapshot.scale);
     setDx(snapshot.dx);
@@ -384,6 +394,8 @@ export default function Home() {
         bgColor1,
         color2,
         bgAngle,
+        pattern,
+        noise,
         scale,
         dx,
         dy,
@@ -463,6 +475,8 @@ export default function Home() {
     setBgColor1(def.bgColor1);
     setColor2(def.color2);
     setBgAngle(def.bgAngle);
+    setPattern(def.pattern || "none");
+    setNoise(def.noise || 0);
     setScale(def.scale);
     setDx(def.dx);
     setDy(def.dy);
@@ -1148,39 +1162,64 @@ export default function Home() {
           </ControlGroup>
 
           <ControlGroup title={t.editor.bgDesign} tone="amber" defaultOpen>
-            <Segmented
-              value={
-                background === "solid"
-                  ? t.editor.pureColor
-                  : background === "linear"
-                    ? t.editor.linear
-                    : background === "radial"
-                      ? t.editor.radial
-                      : background === "conic"
-                        ? t.editor.conic
-                        : background === "image"
-                          ? t.editor.image
-                          : t.editor.transparent
-              }
-              options={[t.editor.pureColor, t.editor.linear, t.editor.radial, t.editor.conic, t.editor.image, t.editor.transparent]}
-              onChange={(value) =>
-                setBackground(
-                  value === t.editor.pureColor
-                    ? "solid"
-                    : value === t.editor.linear
-                      ? "linear"
-                      : value === t.editor.radial
-                        ? "radial"
-                        : value === t.editor.conic
-                          ? "conic"
-                          : value === t.editor.image
-                            ? "image"
-                            : "transparent"
-                )
-              }
-            />
-            {background === "solid" ? (
+            {/* 2×3 六大背景类型分段器 */}
+            <div className="bg-type-grid">
+              {(
+                [
+                  ["solid", lang === "ZH" ? "纯色" : "Solid"],
+                  ["linear", lang === "ZH" ? "线性" : "Linear"],
+                  ["radial", lang === "ZH" ? "径向" : "Radial"],
+                  ["conic", lang === "ZH" ? "锥形" : "Conic"],
+                  ["image", lang === "ZH" ? "图片" : "Image"],
+                  ["transparent", lang === "ZH" ? "透明" : "Transparent"],
+                ] as [Background, string][]
+              ).map(([type, label]) => (
+                <button
+                  key={type}
+                  className={`bg-type-btn ${background === type ? "active" : ""}`}
+                  onClick={() => {
+                    saveState();
+                    setBackground(type);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* 渐变预设 (16 组) */}
+            {["linear", "radial", "conic"].includes(background) && (
               <>
+                <div className="field-label">{lang === "ZH" ? "渐变预设" : "Gradient Presets"}</div>
+                <div className="gradient-preset-grid">
+                  {GRADIENT_PRESETS.map((preset) => (
+                    <button
+                      key={preset.name}
+                      className={`gradient-preset-card ${bgColor1.toLowerCase() === preset.color1.toLowerCase() && color2.toLowerCase() === preset.color2.toLowerCase() ? "active" : ""}`}
+                      style={{
+                        background: `linear-gradient(135deg, ${preset.color1}, ${preset.color2})`,
+                      }}
+                      onClick={() => {
+                        saveState();
+                        setBgColor1(preset.color1);
+                        setColor2(preset.color2);
+                        setBgAngle(preset.angle);
+                      }}
+                      title={preset.name}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* 颜色 1 */}
+            {background !== "transparent" && (
+              <>
+                <div className="field-label">
+                  {["linear", "radial", "conic"].includes(background)
+                    ? (lang === "ZH" ? "颜色 1" : "Color 1")
+                    : (lang === "ZH" ? "背景颜色" : "Background Color")}
+                </div>
                 <TinyColor
                   value={bgColor1}
                   onChange={(val) => {
@@ -1188,101 +1227,221 @@ export default function Home() {
                     setBgColor1(val);
                   }}
                 />
-                <div className="quick-actions">
-                  <button onClick={randomPalette}>
-                    <Sparkles size={12} />{t.editor.randomPalette}
-                  </button>
-                </div>
-              </>
-            ) : background === "transparent" ? null : (
-              <>
-                <div className="color-pair">
-                  <TinyColor
-                    value={bgColor1}
-                    onChange={(val) => {
-                      saveState();
-                      setBgColor1(val);
-                    }}
-                  />
-                  <TinyColor
-                    value={color2}
-                    onChange={(val) => {
-                      saveState();
-                      setColor2(val);
-                    }}
-                  />
-                </div>
-                {background !== "radial" && (
-                  <SliderField label={t.editor.gradientAngle} value={bgAngle} min={0} max={360} suffix="°" onChange={setBgAngle} />
-                )}
-                <div className="quick-actions">
-                  <button onClick={randomPalette}>
-                    <Sparkles size={12} />{t.editor.randomPalette}
-                  </button>
-                  <button onClick={swapBgColors}>{t.editor.swapGradient}</button>
+                <div className="swatch-bar">
+                  {PRESET_SWATCHES.map((hex) => (
+                    <button
+                      key={hex}
+                      className={`swatch-circle ${bgColor1.toLowerCase() === hex.toLowerCase() ? "active" : ""}`}
+                      style={{ backgroundColor: hex }}
+                      onClick={() => {
+                        saveState();
+                        setBgColor1(hex);
+                      }}
+                      title={hex}
+                    />
+                  ))}
                 </div>
               </>
             )}
+
+            {/* 颜色 2 */}
+            {["linear", "radial", "conic", "image"].includes(background) && (
+              <>
+                <div className="field-label" style={{ marginTop: "8px" }}>
+                  {lang === "ZH" ? "颜色 2" : "Color 2"}
+                </div>
+                <TinyColor
+                  value={color2}
+                  onChange={(val) => {
+                    saveState();
+                    setColor2(val);
+                  }}
+                />
+                <div className="swatch-bar">
+                  {PRESET_SWATCHES.map((hex) => (
+                    <button
+                      key={hex}
+                      className={`swatch-circle ${color2.toLowerCase() === hex.toLowerCase() ? "active" : ""}`}
+                      style={{ backgroundColor: hex }}
+                      onClick={() => {
+                        saveState();
+                        setColor2(hex);
+                      }}
+                      title={hex}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* 渐变角度滑块 */}
+            {["linear", "conic", "image"].includes(background) && (
+              <SliderField
+                label={t.editor.gradientAngle}
+                value={bgAngle}
+                min={0}
+                max={360}
+                suffix="°"
+                onChange={setBgAngle}
+              />
+            )}
+
+            {/* 快捷动作按钮组 */}
+            {background !== "transparent" && (
+              <div className="bg-quick-actions">
+                {["linear", "radial", "conic"].includes(background) && (
+                  <button className="bg-action-btn" onClick={swapBgColors}>
+                    <ArrowLeftRight size={11} />
+                    {lang === "ZH" ? "交换" : "Swap"}
+                  </button>
+                )}
+                <button className="bg-action-btn" onClick={randomPalette}>
+                  <Shuffle size={11} />
+                  {lang === "ZH" ? "随机配色" : "Random"}
+                </button>
+              </div>
+            )}
+
+            {/* 图案纹理叠加 */}
+            <div className="field-label" style={{ marginTop: "10px" }}>
+              {lang === "ZH" ? "图案纹理叠加" : "Pattern Overlay"}
+            </div>
+            <div className="pattern-preset-grid">
+              {PATTERN_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  className={`pattern-preset-card ${pattern === opt.id ? "active" : ""}`}
+                  onClick={() => {
+                    saveState();
+                    setPattern(opt.id);
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 噪点滑块 */}
+            <SliderField
+              label={lang === "ZH" ? "噪点" : "Noise"}
+              value={noise}
+              min={0}
+              max={100}
+              suffix="%"
+              onChange={setNoise}
+            />
           </ControlGroup>
 
-          <ControlGroup title={t.editor.designTemplates} tone="amber" defaultOpen={false}>
-            <div className="template-list">
+          <ControlGroup title={t.editor.designTemplates} tone="amber" defaultOpen={true}>
+            <div className="template-icon-grid">
               {(Object.keys(DESIGN_TEMPLATES) as DesignTemplateKey[]).map((key) => {
                 const item = DESIGN_TEMPLATES[key];
                 return (
-                  <button key={key} onClick={() => applyTemplate(key)} title={item.description}>
-                    <span className={`template-thumb ${item.theme}`} />
-                    {item.name}
+                  <button
+                    key={key}
+                    className="template-icon-card"
+                    onClick={() => applyTemplate(key)}
+                    title={`${item.name} · ${item.description}`}
+                  >
+                    <AppMark
+                      shape={item.shape || "rocket"}
+                      fg={item.fg || "#ffffff"}
+                      fgType={item.fgType || "solid"}
+                      fgColor2={item.fgColor2}
+                      fgAngle={item.fgAngle}
+                      background={item.background || "linear"}
+                      bgColor1={item.bgColor1}
+                      color2={item.color2 || "#eab308"}
+                      bgAngle={item.bgAngle ?? 135}
+                      pattern={item.pattern}
+                      noise={item.noise}
+                      rotation={item.rotation ?? 0}
+                      scale={item.scale ?? 60}
+                      dx={item.dx ?? 0}
+                      dy={item.dy ?? 0}
+                      shadow={item.shadow ?? true}
+                      mask={item.mask || "squircle"}
+                      maskRadius={item.maskRadius ?? 22}
+                      strokeEnabled={item.strokeEnabled}
+                      strokeWidth={item.strokeWidth}
+                      strokeColor={item.strokeColor}
+                    />
                   </button>
                 );
               })}
             </div>
           </ControlGroup>
 
-          <ControlGroup title={t.editor.advanced} tone="slate" defaultOpen={false}>
+          <ControlGroup title={t.editor.advanced} tone="slate" defaultOpen={true}>
             <div className="subheading">
-              <SlidersHorizontal size={13} />{t.editor.shapeMask}
+              <SlidersHorizontal size={13} />
+              {t.editor.shapeMask}
             </div>
-            <Segmented
-              value={
-                mask === "none"
-                  ? t.editor.none
-                  : mask === "squircle"
-                    ? t.editor.squircle
-                    : mask === "circle"
-                      ? t.editor.circle
-                      : mask === "hex"
-                        ? t.editor.hex
-                        : t.editor.custom
-              }
-              options={[t.editor.none, t.editor.squircle, t.editor.circle, t.editor.hex, t.editor.custom]}
-              onChange={(value) =>
-                setMask(
-                  value === t.editor.none
-                    ? "none"
-                    : value === t.editor.squircle
-                      ? "squircle"
-                      : value === t.editor.circle
-                        ? "circle"
-                        : value === t.editor.hex
-                          ? "hex"
-                          : "custom"
-                )
-              }
+
+            {/* 4 列形状蒙版卡片网格 */}
+            <div className="mask-preset-grid">
+              {MASK_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  className={`mask-preset-card ${mask === opt.id ? "active" : ""}`}
+                  onClick={() => {
+                    saveState();
+                    setMask(opt.id);
+                  }}
+                >
+                  <span className="mask-icon">
+                    <svg viewBox="0 0 24 24">
+                      {opt.id === "squircle" && <rect x="3" y="3" width="18" height="18" rx="5" />}
+                      {opt.id === "round" && <rect x="3" y="3" width="18" height="18" rx="3.5" />}
+                      {opt.id === "circle" && <circle cx="12" cy="12" r="9" />}
+                      {opt.id === "none" && <rect x="3" y="3" width="18" height="18" />}
+                      {opt.id === "star" && <polygon points="12,2 15,8.5 22,9 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9 9,8.5" />}
+                      {opt.id === "diamond" && <rect x="4.5" y="4.5" width="15" height="15" rx="2" transform="rotate(45 12 12)" />}
+                      {opt.id === "triangle" && <polygon points="12,3 21.5,20.5 2.5,20.5" />}
+                      {opt.id === "teardrop" && <path d="M12 2 C12 2 20.5 10.5 20.5 15.5 A8.5 8.5 0 0 1 3.5 15.5 C3.5 10.5 12 2 12 2 Z" />}
+                      {opt.id === "custom" && <polygon points="12,3 21,21 3,21" />}
+                    </svg>
+                  </span>
+                  <span className="mask-label">{lang === "ZH" ? opt.labelZh : opt.labelEn}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* 外边距（透明留白）滑块 */}
+            <SliderField
+              label={lang === "ZH" ? "外边距（透明留白）" : "Mask Padding"}
+              value={maskPad}
+              min={0}
+              max={30}
+              suffix="%"
+              onChange={setMaskPad}
             />
-            <SliderField label={t.editor.radius} value={maskRadius} min={0} max={50} suffix="%" onChange={setMaskRadius} />
-            <SliderField label={t.editor.padding} value={maskPad} min={0} max={30} suffix="%" onChange={setMaskPad} />
-            <textarea value={customMask} onChange={(event) => setCustomMask(event.target.value)} placeholder="M50 0 L100 100 L0 100 Z" />
-            <button
-              className="outline-action"
-              onClick={() => {
-                setMask("custom");
-                toast.success(lang === "ZH" ? "自定义蒙版已应用" : "Custom mask applied");
-              }}
-            >
-              {t.editor.applyCustomMask}
-            </button>
-            <div className="subheading">
+
+            {/* 自定义 SVG 蒙版 */}
+            <div className="custom-mask-editor">
+              <div className="custom-mask-head">
+                <span>{lang === "ZH" ? "自定义 SVG 蒙版" : "Custom SVG Mask"}</span>
+                <small>viewBox 0 0 100 100</small>
+              </div>
+              <textarea
+                className="custom-mask-textarea"
+                value={customMask}
+                onChange={(event) => setCustomMask(event.target.value)}
+                placeholder="M50 0 L100 100 L0 100 Z"
+              />
+              <button
+                className="outline-action"
+                style={{ width: "100%", margin: "2px 0 0 0", height: "26px", fontSize: "10px" }}
+                onClick={() => {
+                  setMask("custom");
+                  toast.success(lang === "ZH" ? "自定义蒙版已应用" : "Custom mask applied");
+                }}
+              >
+                {t.editor.applyCustomMask}
+              </button>
+            </div>
+
+            <div className="subheading" style={{ marginTop: "12px" }}>
               <Palette size={13} />{t.editor.layerEffects}
             </div>
             <div className="effect-pills">
@@ -1401,6 +1560,8 @@ export default function Home() {
                 bgColor1={bgColor1}
                 color2={color2}
                 bgAngle={bgAngle}
+                pattern={pattern}
+                noise={noise}
                 rotation={rotation}
                 scale={scale}
                 dx={dx}
@@ -1516,6 +1677,8 @@ export default function Home() {
                 bgColor1={bgColor1}
                 color2={color2}
                 bgAngle={bgAngle}
+                pattern={pattern}
+                noise={noise}
                 rotation={rotation}
                 scale={scale}
                 dx={dx}
@@ -1547,6 +1710,8 @@ export default function Home() {
                 bgColor1={bgColor1}
                 color2={color2}
                 bgAngle={bgAngle}
+                pattern={pattern}
+                noise={noise}
                 rotation={rotation}
                 scale={scale}
                 dx={dx}
@@ -1586,6 +1751,8 @@ export default function Home() {
                 bgColor1={bgColor1}
                 color2={color2}
                 bgAngle={bgAngle}
+                pattern={pattern}
+                noise={noise}
                 rotation={rotation}
                 scale={scale}
                 dx={dx}
@@ -1626,6 +1793,8 @@ export default function Home() {
                 bgColor1={bgColor1}
                 color2={color2}
                 bgAngle={bgAngle}
+                pattern={pattern}
+                noise={noise}
                 rotation={rotation}
                 scale={scale}
                 dx={dx}

@@ -8,7 +8,7 @@ export type ExportDesignState = {
   shape: string;
   iconId?: string;
   iconSvg?: string;
-  mask: "none" | "squircle" | "circle" | "hex" | "custom";
+  mask: "none" | "squircle" | "round" | "circle" | "star" | "diamond" | "triangle" | "teardrop" | "hex" | "custom";
   maskRadius: number;
   maskPad: number;
   customMask: string;
@@ -32,6 +32,8 @@ export type ExportDesignState = {
   bgColor1?: string;
   color2: string;
   bgAngle?: number;
+  pattern?: "none" | "dots" | "stripes" | "grid" | "checker" | "waves" | "cross";
+  noise?: number;
   rotation: number;
   scale: number;
   dx: number;
@@ -124,6 +126,13 @@ export function createSvgMarkup(state: ExportDesignState) {
       <stop offset="60%" stop-color="#ffffff" stop-opacity="0.08"/>
       <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
+    ${state.pattern === "dots" ? '<pattern id="bg-pattern" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="6" cy="6" r="1.5" fill="rgba(255,255,255,0.2)"/></pattern>' : ""}
+    ${state.pattern === "stripes" ? '<pattern id="bg-pattern" width="14" height="14" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="14" stroke="rgba(255,255,255,0.2)" stroke-width="3.5"/></pattern>' : ""}
+    ${state.pattern === "grid" ? '<pattern id="bg-pattern" width="14" height="14" patternUnits="userSpaceOnUse"><path d="M 14 0 L 0 0 0 14" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/></pattern>' : ""}
+    ${state.pattern === "checker" ? '<pattern id="bg-pattern" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="rgba(255,255,255,0.16)"/><rect x="8" y="8" width="8" height="8" fill="rgba(255,255,255,0.16)"/></pattern>' : ""}
+    ${state.pattern === "waves" ? '<pattern id="bg-pattern" width="20" height="10" patternUnits="userSpaceOnUse"><path d="M 0 5 Q 5 0 10 5 T 20 5" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/></pattern>' : ""}
+    ${state.pattern === "cross" ? '<pattern id="bg-pattern" width="16" height="16" patternUnits="userSpaceOnUse"><path d="M8 3 v10 M3 8 h10" stroke="rgba(255,255,255,0.22)" stroke-width="1.5"/></pattern>' : ""}
+    ${(state.noise ?? 0) > 0 ? '<filter id="bg-noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.5 0"/></filter>' : ""}
     ${fgGradientDef}`;
 
   // 蒙版与外形剪裁
@@ -132,13 +141,25 @@ export function createSvgMarkup(state: ExportDesignState) {
   let maskPath = "";
   if (state.mask === "circle") {
     maskPath = `<circle cx="50" cy="50" r="${50 - pad}"/>`;
+  } else if (state.mask === "round") {
+    maskPath = `<rect x="${pad}" y="${pad}" width="${innerSize}" height="${innerSize}" rx="16" ry="16"/>`;
+  } else if (state.mask === "star") {
+    maskPath = `<polygon points="50,${pad + 4} ${63 - pad * 0.2},${35 + pad * 0.1} ${96 - pad},${36 + pad * 0.1} ${69 - pad * 0.3},${56 - pad * 0.1} ${79 - pad * 0.4},${90 - pad} 50,${70 - pad * 0.4} ${21 + pad * 0.4},${90 - pad} ${31 + pad * 0.3},${56 - pad * 0.1} ${4 + pad},${36 + pad * 0.1} ${37 + pad * 0.2},${35 + pad * 0.1}"/>`;
+  } else if (state.mask === "diamond") {
+    maskPath = `<rect x="${20 + pad * 0.6}" y="${20 + pad * 0.6}" width="${60 - pad * 1.2}" height="${60 - pad * 1.2}" rx="8" transform="rotate(45 50 50)"/>`;
+  } else if (state.mask === "triangle") {
+    maskPath = `<polygon points="50,${pad + 6} ${95 - pad},${94 - pad} ${5 + pad},${94 - pad}"/>`;
+  } else if (state.mask === "teardrop") {
+    maskPath = `<path d="M50 ${pad + 6} C50 ${pad + 6} ${92 - pad} ${45 + pad * 0.5} ${92 - pad} ${68 - pad * 0.5} A${42 - pad} ${42 - pad} 0 0 1 ${8 + pad} ${68 - pad * 0.5} C${8 + pad} ${45 + pad * 0.5} 50 ${pad + 6} 50 ${pad + 6} Z"/>`;
   } else if (state.mask === "hex") {
     maskPath = `<path d="M50 ${pad} ${100 - pad} ${pad + 20} ${100 - pad} ${100 - pad - 20} 50 ${100 - pad} ${pad} ${100 - pad - 20} ${pad} ${pad + 20}Z"/>`;
   } else if (state.mask === "custom" && state.customMask?.trim()) {
     maskPath = `<path d="${escapeXml(state.customMask)}"/>`;
+  } else if (state.mask === "none") {
+    maskPath = `<rect x="0" y="0" width="100" height="100"/>`;
   } else {
-    // 默认或 squircle 圆角矩形（22% 平滑圆角）
-    const radius = state.mask === "none" ? 22 : Math.max(4, Math.min(46, state.maskRadius ?? 22));
+    // 默认或 squircle iOS 超椭圆（22% 平滑连续圆角）
+    const radius = Math.max(4, Math.min(46, state.maskRadius ?? 22));
     maskPath = `<rect x="${pad}" y="${pad}" width="${innerSize}" height="${innerSize}" rx="${radius}" ry="${radius}"/>`;
   }
 
@@ -147,6 +168,8 @@ export function createSvgMarkup(state: ExportDesignState) {
   const bgFill = backgroundPaint(state);
   const bgRect = bgFill !== "none" ? `<rect width="100" height="100" fill="${bgFill}"/>` : "";
   const glossRect = bgFill !== "none" ? '<rect width="100" height="100" fill="url(#bg-gloss)" style="mix-blend-mode:screen"/>' : "";
+  const patternRect = state.pattern && state.pattern !== "none" ? '<rect width="100" height="100" fill="url(#bg-pattern)"/>' : "";
+  const noiseRect = (state.noise ?? 0) > 0 ? `<rect width="100" height="100" filter="url(#bg-noise)" opacity="${Math.min(1, (state.noise ?? 0) / 100)}" style="mix-blend-mode:overlay"/>` : "";
 
   // 阴影与发光
   const shadowFilter = state.shadow
@@ -197,6 +220,8 @@ export function createSvgMarkup(state: ExportDesignState) {
   <g clip-path="url(#app-clip)">
     ${bgRect}
     ${glossRect}
+    ${patternRect}
+    ${noiseRect}
     <g transform="translate(50 50) scale(0.5) translate(-50 -50)">
       <g color="${escapeXml(state.fg)}" fill="${fgPaint}" transform="${iconTransform}"${filterAttr}${strokeAttr}>
         ${iconMarkup}

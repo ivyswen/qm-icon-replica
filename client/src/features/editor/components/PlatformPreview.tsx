@@ -13,6 +13,8 @@ interface PreviewBaseProps {
   bgColor1?: string;
   color2: string;
   bgAngle?: number;
+  pattern?: ExportDesignState["pattern"];
+  noise?: number;
   rotation: number;
   scale: number;
   dx: number;

@@ -23,6 +23,8 @@ export interface SavedDraftState {
   bgColor1: string;
   color2: string;
   bgAngle: number;
+  pattern?: "none" | "dots" | "stripes" | "grid" | "checker" | "waves" | "cross";
+  noise?: number;
   scale: number;
   dx: number;
   dy: number;
@@ -30,7 +32,7 @@ export interface SavedDraftState {
   shadow: boolean;
   appName: string;
   size: number;
-  mask: "none" | "squircle" | "circle" | "hex" | "custom";
+  mask: "none" | "squircle" | "round" | "circle" | "star" | "diamond" | "triangle" | "teardrop" | "hex" | "custom";
   maskRadius: number;
   maskPad: number;
   customMask: string;
@@ -47,6 +49,60 @@ export interface SavedDraftState {
   updatedAt?: number;
 }
 
+export interface MaskOption {
+  id: "squircle" | "round" | "circle" | "none" | "star" | "diamond" | "triangle" | "teardrop" | "custom";
+  labelZh: string;
+  labelEn: string;
+}
+
+export const MASK_OPTIONS: MaskOption[] = [
+  { id: "squircle", labelZh: "iOS 超椭圆", labelEn: "iOS Squircle" },
+  { id: "round", labelZh: "圆角矩形", labelEn: "Rounded Rect" },
+  { id: "circle", labelZh: "圆形", labelEn: "Circle" },
+  { id: "none", labelZh: "全出血", labelEn: "Full Bleed" },
+  { id: "star", labelZh: "星形", labelEn: "Star" },
+  { id: "diamond", labelZh: "菱形", labelEn: "Diamond" },
+  { id: "triangle", labelZh: "三角", labelEn: "Triangle" },
+  { id: "teardrop", labelZh: "水滴", labelEn: "Teardrop" },
+  { id: "custom", labelZh: "自定义", labelEn: "Custom" },
+];
+
+export interface GradientPreset {
+  name: string;
+  color1: string;
+  color2: string;
+  angle: number;
+}
+
+export const GRADIENT_PRESETS: GradientPreset[] = [
+  { name: "青金晨光", color1: "#2dd4bf", color2: "#eab308", angle: 135 },
+  { name: "极光嫩绿", color1: "#10b981", color2: "#84cc16", angle: 135 },
+  { name: "莓果粉红", color1: "#f43f5e", color2: "#fb7185", angle: 135 },
+  { name: "深海靛蓝", color1: "#1e3a8a", color2: "#3b82f6", angle: 135 },
+  { name: "霓虹幻紫", color1: "#8b5cf6", color2: "#d946ef", angle: 135 },
+  { name: "薄荷青蓝", color1: "#06b6d4", color2: "#10b981", angle: 135 },
+  { name: "墨石冷青", color1: "#0f172a", color2: "#0d9488", angle: 135 },
+  { name: "日落金橙", color1: "#f59e0b", color2: "#fef08a", angle: 135 },
+  { name: "天际浅蓝", color1: "#38bdf8", color2: "#818cf8", angle: 135 },
+  { name: "草木亮绿", color1: "#84cc16", color2: "#22c55e", angle: 135 },
+  { name: "暖阳橙金", color1: "#f97316", color2: "#fbbf24", angle: 135 },
+  { name: "碧湖苍翠", color1: "#047857", color2: "#065f46", angle: 135 },
+  { name: "暗夜碳黑", color1: "#1e293b", color2: "#0f172a", angle: 135 },
+  { name: "暮光青蓝", color1: "#0284c7", color2: "#0d9488", angle: 135 },
+  { name: "晚霞紫金", color1: "#7c3aed", color2: "#f59e0b", angle: 135 },
+  { name: "金属冷银", color1: "#64748b", color2: "#e2e8f0", angle: 135 },
+];
+
+export const PATTERN_OPTIONS = [
+  { id: "none", label: "无" },
+  { id: "dots", label: "波点" },
+  { id: "stripes", label: "条纹" },
+  { id: "grid", label: "网格" },
+  { id: "checker", label: "棋盘" },
+  { id: "waves", label: "波浪" },
+  { id: "cross", label: "十字" },
+] as const;
+
 export const DEFAULT_DESIGN_DRAFT: SavedDraftState = {
   sourceMode: "clipart",
   customText: "QM",
@@ -62,6 +118,8 @@ export const DEFAULT_DESIGN_DRAFT: SavedDraftState = {
   bgColor1: "#dceee9",
   color2: "#f59e0b",
   bgAngle: 135,
+  pattern: "none",
+  noise: 0,
   scale: 60,
   dx: 0,
   dy: 0,
