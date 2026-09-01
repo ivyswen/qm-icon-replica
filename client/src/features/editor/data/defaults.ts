@@ -4,9 +4,14 @@ import { BUILTIN_ICONS } from "@/features/icons/data/builtinIcons";
 export const HISTORY_STORAGE_KEY = "qm-icon-replica-history-v1";
 export const DRAFT_STORAGE_KEY = "qm-icon-replica-draft-v1";
 
+export type SourceMode = "clipart" | "logo" | "text" | "emoji" | "image" | "svg";
+
 export interface SavedDraftState {
-  sourceMode: "clipart" | "logo" | "text";
+  sourceMode: SourceMode;
   customText: string;
+  emojiChar?: string;
+  customSvgCode?: string;
+  customImageDataUrl?: string;
   shape: Shape;
   iconId?: string;
   iconSvg?: string;
@@ -45,6 +50,9 @@ export interface SavedDraftState {
 export const DEFAULT_DESIGN_DRAFT: SavedDraftState = {
   sourceMode: "clipart",
   customText: "QM",
+  emojiChar: "🚀",
+  customSvgCode: "",
+  customImageDataUrl: "",
   shape: "spark",
   fg: "#0f766e",
   fgType: "solid",

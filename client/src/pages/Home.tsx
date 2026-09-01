@@ -5,6 +5,7 @@
 import {
   ChevronDown,
   ChevronUp,
+  Code,
   Download,
   Eye,
   Files,
@@ -12,6 +13,7 @@ import {
   Globe2,
   HelpCircle,
   History,
+  Image as ImageIcon,
   Info,
   Keyboard,
   Layers,
@@ -29,12 +31,14 @@ import {
   Share2,
   Shuffle,
   SlidersHorizontal,
+  Smile,
   Sparkles,
   Sun,
   Undo2,
+  Upload,
   X,
 } from "lucide-react";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getTranslation, type Language } from "@/features/i18n";
@@ -47,6 +51,11 @@ import {
   getDefaultStarterIcons,
   searchIconify,
   createTextSvg,
+  createEmojiSvg,
+  createImageSvg,
+  parseRawSvgInput,
+  HOT_EMOJIS,
+  EMOJI_CATEGORIES,
   BUILTIN_ICONS,
   BRAND_STARTER,
   type IconSearchItem,
@@ -59,6 +68,7 @@ import {
   saveSavedDraft,
   clearSavedDraft,
   DEFAULT_DESIGN_DRAFT,
+  type SourceMode,
 } from "@/features/editor/data/defaults";
 import { DESIGN_TEMPLATES, type DesignTemplateKey } from "@/features/editor/data/templates";
 import { ControlGroup, Segmented, SliderField, TinyColor, Toggle } from "@/features/editor/components/EditorPrimitives";
@@ -96,8 +106,15 @@ export default function Home() {
   const [shape, setShape] = useState<Shape>(initialDraft.shape);
   const [iconId, setIconId] = useState<string | undefined>(initialDraft.iconId);
   const [iconSvg, setIconSvg] = useState<string | undefined>(initialDraft.iconSvg);
-  const [sourceMode, setSourceMode] = useState<"clipart" | "logo" | "text">(initialDraft.sourceMode);
+  const [sourceMode, setSourceMode] = useState<SourceMode>(initialDraft.sourceMode);
+  const [sourceDropdownOpen, setSourceDropdownOpen] = useState(false);
   const [customText, setCustomText] = useState(initialDraft.customText);
+  const [emojiChar, setEmojiChar] = useState(initialDraft.emojiChar || "🚀");
+  const [emojiCategory, setEmojiCategory] = useState<string>("popular");
+  const [emojiSearch, setEmojiSearch] = useState<string>("");
+  const [customSvgCode, setCustomSvgCode] = useState(initialDraft.customSvgCode || "");
+  const [customImageDataUrl, setCustomImageDataUrl] = useState(initialDraft.customImageDataUrl || "");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [iconResults, setIconResults] = useState<IconSearchItem[]>(() => getDefaultStarterIcons());
   const [iconSearching, setIconSearching] = useState(false);
   const [iconSearchError, setIconSearchError] = useState("");
@@ -353,6 +370,9 @@ export default function Home() {
       saveSavedDraft({
         sourceMode,
         customText,
+        emojiChar,
+        customSvgCode,
+        customImageDataUrl,
         shape,
         iconId,
         iconSvg,
@@ -606,31 +626,118 @@ export default function Home() {
             </button>
           </div>
           <ControlGroup title={t.editor.iconShape} tone="teal">
-            <Segmented
-              value={sourceMode === "clipart" ? t.editor.clipart : sourceMode === "logo" ? t.editor.logo : t.editor.text}
-              options={[t.editor.clipart, t.editor.logo, t.editor.text]}
-              onChange={(value) => {
-                if (value === t.editor.logo) {
-                  setSourceMode("logo");
-                  setIconResults(
-                    BRAND_STARTER.map((n) => ({
-                      id: `simple-icons:${n}`,
-                      prefix: "simple-icons",
-                      name: n,
-                      collection: "Simple Icons",
-                    }))
-                  );
-                } else if (value === t.editor.text) {
+            {/* 顶部三列组合分段选择器（图形 / 文本 / Emoji ∨） */}
+            <div className="source-segment-combo">
+              <button
+                className={sourceMode === "clipart" ? "active" : ""}
+                onClick={() => {
+                  setSourceMode("clipart");
+                  setSourceDropdownOpen(false);
+                  setIconResults(getDefaultStarterIcons());
+                }}
+              >
+                {lang === "ZH" ? "图形" : "Clipart"}
+              </button>
+              <button
+                className={sourceMode === "text" ? "active" : ""}
+                onClick={() => {
                   setSourceMode("text");
+                  setSourceDropdownOpen(false);
                   setShape("text");
                   setIconId(undefined);
                   setIconSvg(createTextSvg(customText));
-                } else {
-                  setSourceMode("clipart");
-                  setIconResults(getDefaultStarterIcons());
-                }
-              }}
-            />
+                }}
+              >
+                {lang === "ZH" ? "文本" : "Text"}
+              </button>
+              <div className="source-dropdown-wrap">
+                <button
+                  className={`source-dropdown-btn ${["emoji", "logo", "image", "svg"].includes(sourceMode) ? "active" : ""} ${sourceDropdownOpen ? "open" : ""}`}
+                  onClick={() => {
+                    if (sourceMode !== "emoji" && !["logo", "image", "svg"].includes(sourceMode)) {
+                      setSourceMode("emoji");
+                      setShape("text");
+                      setIconId(undefined);
+                      setIconSvg(createEmojiSvg(emojiChar));
+                    }
+                    setSourceDropdownOpen(!sourceDropdownOpen);
+                  }}
+                  aria-haspopup="listbox"
+                  aria-expanded={sourceDropdownOpen}
+                >
+                  <span>
+                    {sourceMode === "logo"
+                      ? "Logo"
+                      : sourceMode === "image"
+                        ? (lang === "ZH" ? "图片" : "Image")
+                        : sourceMode === "svg"
+                          ? "SVG"
+                          : "Emoji"}
+                  </span>
+                  <ChevronDown size={13} />
+                </button>
+
+                {sourceDropdownOpen && (
+                  <div className="source-dropdown-menu">
+                    {(
+                      [
+                        { id: "emoji", label: "Emoji" },
+                        { id: "logo", label: "Logo" },
+                        { id: "image", label: lang === "ZH" ? "图片" : "Image" },
+                        { id: "svg", label: "SVG" },
+                        { id: "clipart", label: lang === "ZH" ? "图形" : "Clipart" },
+                        { id: "text", label: lang === "ZH" ? "文本" : "Text" },
+                      ] as { id: SourceMode; label: string }[]
+                    ).map((item) => (
+                      <button
+                        key={item.id}
+                        className={`source-dropdown-item ${sourceMode === item.id ? "active" : ""}`}
+                        onClick={() => {
+                          setSourceMode(item.id);
+                          setSourceDropdownOpen(false);
+                          if (item.id === "logo") {
+                            setIconResults(
+                              BRAND_STARTER.map((n) => ({
+                                id: `simple-icons:${n}`,
+                                prefix: "simple-icons",
+                                name: n,
+                                collection: "Simple Icons",
+                              }))
+                            );
+                          } else if (item.id === "text") {
+                            setShape("text");
+                            setIconId(undefined);
+                            setIconSvg(createTextSvg(customText));
+                          } else if (item.id === "emoji") {
+                            setShape("text");
+                            setIconId(undefined);
+                            setIconSvg(createEmojiSvg(emojiChar));
+                          } else if (item.id === "image") {
+                            setShape("text");
+                            setIconId(undefined);
+                            if (customImageDataUrl) {
+                              setIconSvg(createImageSvg(customImageDataUrl));
+                            }
+                          } else if (item.id === "svg") {
+                            setShape("text");
+                            setIconId(undefined);
+                            if (customSvgCode) {
+                              const res = parseRawSvgInput(customSvgCode);
+                              if (res.svg) setIconSvg(res.svg);
+                            }
+                          } else {
+                            setIconResults(getDefaultStarterIcons());
+                          }
+                        }}
+                      >
+                        <span>{item.label}</span>
+                        {sourceMode === item.id && <span>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
             {sourceMode === "clipart" && (
               <>
@@ -753,6 +860,187 @@ export default function Home() {
                       aria-label="清空文本"
                     >
                       <X size={11} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {sourceMode === "emoji" && (
+              <div className="emoji-mode-box" style={{ padding: "4px 0" }}>
+                <div className="search-box">
+                  <Search size={13} />
+                  <input
+                    type="text"
+                    value={emojiSearch}
+                    onChange={(e) => setEmojiSearch(e.target.value)}
+                    placeholder={lang === "ZH" ? "搜索 Emoji..." : "Search Emoji..."}
+                  />
+                  {emojiSearch && (
+                    <button
+                      className="icon-clear"
+                      onClick={() => setEmojiSearch("")}
+                      aria-label="清空搜索"
+                    >
+                      <X size={11} />
+                    </button>
+                  )}
+                </div>
+
+                {/* 8 大 Emoji 分类胶囊标签 */}
+                <div className="emoji-category-bar">
+                  {EMOJI_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      className={`emoji-category-pill ${emojiCategory === cat.id && !emojiSearch ? "active" : ""}`}
+                      onClick={() => {
+                        setEmojiCategory(cat.id);
+                        setEmojiSearch("");
+                      }}
+                    >
+                      {lang === "ZH" ? cat.labelZh : cat.labelEn}
+                    </button>
+                  ))}
+                </div>
+
+                {/* 7 列高密度分类 Emoji 宫格 */}
+                <div className="emoji-category-grid">
+                  {(
+                    emojiSearch.trim()
+                      ? EMOJI_CATEGORIES.flatMap((c) => c.emojis).filter((char) => char.includes(emojiSearch.trim()))
+                      : (EMOJI_CATEGORIES.find((c) => c.id === emojiCategory)?.emojis || HOT_EMOJIS)
+                  ).map((char, index) => (
+                    <button
+                      key={`${char}-${index}`}
+                      className={`emoji-btn ${emojiChar === char ? "active" : ""}`}
+                      onClick={() => {
+                        setEmojiChar(char);
+                        setShape("text");
+                        setIconId(undefined);
+                        setIconSvg(createEmojiSvg(char));
+                      }}
+                      title={char}
+                    >
+                      {char}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {sourceMode === "image" && (
+              <div className="image-mode-box" style={{ padding: "8px 0" }}>
+                <div className="field-label">{lang === "ZH" ? "上传本地图片" : "Upload Local Image"}</div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast.error(lang === "ZH" ? "图片大小不能超过 5MB" : "Image must be under 5MB");
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const dataUrl = reader.result as string;
+                      setCustomImageDataUrl(dataUrl);
+                      setShape("text");
+                      setIconId(undefined);
+                      setIconSvg(createImageSvg(dataUrl));
+                      toast.success(lang === "ZH" ? "图片已载入画布" : "Image loaded to canvas");
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                <div
+                  className="image-upload-dropzone"
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const dataUrl = reader.result as string;
+                      setCustomImageDataUrl(dataUrl);
+                      setShape("text");
+                      setIconId(undefined);
+                      setIconSvg(createImageSvg(dataUrl));
+                      toast.success(lang === "ZH" ? "图片已载入画布" : "Image loaded to canvas");
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                >
+                  <Upload size={20} />
+                  <span>{lang === "ZH" ? "点击或拖拽上传图片" : "Click or drop image here"}</span>
+                  <small>PNG / JPG / WebP / SVG (最大 5MB)</small>
+                </div>
+
+                {customImageDataUrl && (
+                  <div className="image-preview-card">
+                    <img src={customImageDataUrl} alt="Preview" className="image-preview-thumb" />
+                    <button
+                      className="outline-action"
+                      style={{ width: "auto", margin: 0, padding: "0 8px", height: "24px", fontSize: "9px" }}
+                      onClick={() => {
+                        setCustomImageDataUrl("");
+                        setIconSvg(undefined);
+                        setShape("spark");
+                      }}
+                    >
+                      {lang === "ZH" ? "移除图片" : "Remove"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {sourceMode === "svg" && (
+              <div className="svg-mode-box" style={{ padding: "8px 0" }}>
+                <div className="field-label">{lang === "ZH" ? "粘贴自定义 SVG 代码" : "Paste Raw SVG Code"}</div>
+                <textarea
+                  className="svg-code-textarea"
+                  value={customSvgCode}
+                  placeholder={lang === "ZH" ? "粘贴 <svg>...</svg> 或 path d='...' 代码" : "Paste <svg>...</svg> or path d='...' code"}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCustomSvgCode(val);
+                    setShape("text");
+                    setIconId(undefined);
+                    if (val.trim()) {
+                      const res = parseRawSvgInput(val);
+                      if (res.svg) {
+                        setIconSvg(res.svg);
+                      }
+                    }
+                  }}
+                />
+                <div className="quick-actions" style={{ marginTop: "4px" }}>
+                  <button
+                    onClick={() => {
+                      const sample = `<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" fill="none"/></svg>`;
+                      setCustomSvgCode(sample);
+                      setShape("text");
+                      setIconId(undefined);
+                      setIconSvg(sample);
+                      toast.success(lang === "ZH" ? "已载入示例 SVG" : "Loaded sample SVG");
+                    }}
+                  >
+                    <Code size={12} />{lang === "ZH" ? "载入示例 SVG" : "Sample SVG"}
+                  </button>
+                  {customSvgCode && (
+                    <button
+                      onClick={() => {
+                        setCustomSvgCode("");
+                        setIconSvg(undefined);
+                        setShape("spark");
+                      }}
+                    >
+                      {lang === "ZH" ? "清空" : "Clear"}
                     </button>
                   )}
                 </div>
