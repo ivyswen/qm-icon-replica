@@ -1,14 +1,14 @@
 import type { ExportDesignState } from "@/features/export/export";
 
 export type DesignTemplateKey =
-  | "青金火箭"
-  | "极光翠绿"
-  | "莓果粉红"
-  | "深海靛蓝"
-  | "霓虹幻紫"
-  | "极简黑白"
-  | "薄荷青绿"
-  | "网格暗金";
+  | "清响"
+  | "林野"
+  | "珊瑚"
+  | "钴夜"
+  | "莓紫"
+  | "墨白"
+  | "青玻"
+  | "金夜";
 
 export type DesignTemplatePreset = Partial<ExportDesignState> & {
   name: string;
@@ -16,9 +16,9 @@ export type DesignTemplatePreset = Partial<ExportDesignState> & {
 };
 
 export const DESIGN_TEMPLATES: Record<DesignTemplateKey, DesignTemplatePreset> = {
-  "青金火箭": {
-    name: "青金火箭",
-    description: "极光青绿与晨曦金黄双色渐变",
+  "清响": {
+    name: "清响",
+    description: "青金晨光流转，清透微光质感",
     shape: "rocket",
     fg: "#ffffff",
     fgType: "solid",
@@ -32,9 +32,9 @@ export const DESIGN_TEMPLATES: Record<DesignTemplateKey, DesignTemplatePreset> =
     maskRadius: 22,
     shadow: true,
   },
-  "极光翠绿": {
-    name: "极光翠绿",
-    description: "清新自然的极光嫩绿与草木绿",
+  "林野": {
+    name: "林野",
+    description: "极光草木翠绿，自然生命力",
     shape: "rocket",
     fg: "#ffffff",
     fgType: "solid",
@@ -48,9 +48,9 @@ export const DESIGN_TEMPLATES: Record<DesignTemplateKey, DesignTemplatePreset> =
     maskRadius: 22,
     shadow: true,
   },
-  "莓果粉红": {
-    name: "莓果粉红",
-    description: "活力甜美的莓果玫瑰粉红渐变",
+  "珊瑚": {
+    name: "珊瑚",
+    description: "莓果玫瑰粉红，柔和活力流光",
     shape: "rocket",
     fg: "#ffffff",
     fgType: "solid",
@@ -64,9 +64,9 @@ export const DESIGN_TEMPLATES: Record<DesignTemplateKey, DesignTemplatePreset> =
     maskRadius: 22,
     shadow: true,
   },
-  "深海靛蓝": {
-    name: "深海靛蓝",
-    description: "深邃沉稳的深海蓝与天际亮蓝",
+  "钴夜": {
+    name: "钴夜",
+    description: "深邃深海蓝与天际亮蓝外框",
     shape: "rocket",
     fg: "#ffffff",
     fgType: "solid",
@@ -83,9 +83,9 @@ export const DESIGN_TEMPLATES: Record<DesignTemplateKey, DesignTemplatePreset> =
     strokeWidth: 2,
     strokeColor: "#60a5fa",
   },
-  "霓虹幻紫": {
-    name: "霓虹幻紫",
-    description: "电光幻紫与洋红梦幻流光",
+  "莓紫": {
+    name: "莓紫",
+    description: "电光幻紫与洋红梦幻霓虹",
     shape: "rocket",
     fg: "#ffffff",
     fgType: "solid",
@@ -99,9 +99,9 @@ export const DESIGN_TEMPLATES: Record<DesignTemplateKey, DesignTemplatePreset> =
     maskRadius: 22,
     shadow: true,
   },
-  "极简黑白": {
-    name: "极简黑白",
-    description: "纯粹高质感的极简现代黑白风",
+  "墨白": {
+    name: "墨白",
+    description: "纯粹现代高对比黑白风尚",
     shape: "rocket",
     fg: "#0f172a",
     fgType: "solid",
@@ -115,9 +115,9 @@ export const DESIGN_TEMPLATES: Record<DesignTemplateKey, DesignTemplatePreset> =
     maskRadius: 22,
     shadow: true,
   },
-  "薄荷青绿": {
-    name: "薄荷青绿",
-    description: "清凉通透的薄荷天青流光渐变",
+  "青玻": {
+    name: "青玻",
+    description: "薄荷天青通透流光玻璃感",
     shape: "rocket",
     fg: "#ffffff",
     fgType: "solid",
@@ -131,8 +131,8 @@ export const DESIGN_TEMPLATES: Record<DesignTemplateKey, DesignTemplatePreset> =
     maskRadius: 22,
     shadow: true,
   },
-  "网格暗金": {
-    name: "网格暗金",
+  "金夜": {
+    name: "金夜",
     description: "暗夜几何网格底纹与暖光金标",
     shape: "rocket",
     fg: "#facc15",

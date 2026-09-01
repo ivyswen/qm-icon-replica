@@ -1,4 +1,5 @@
 import type { Background, Shape } from "@/features/editor/model";
+import type { ExportDesignState } from "@/features/export";
 import { BUILTIN_ICONS } from "@/features/icons/data/builtinIcons";
 
 export const HISTORY_STORAGE_KEY = "qm-icon-replica-history-v1";
@@ -6,51 +7,12 @@ export const DRAFT_STORAGE_KEY = "qm-icon-replica-draft-v1";
 
 export type SourceMode = "clipart" | "logo" | "text" | "emoji" | "image" | "svg";
 
-export interface SavedDraftState {
-  sourceMode: SourceMode;
-  customText: string;
-  emojiChar?: string;
-  customSvgCode?: string;
-  customImageDataUrl?: string;
-  shape: Shape;
-  iconId?: string;
-  iconSvg?: string;
-  fg: string;
-  fgType: "solid" | "gradient";
-  fgColor2: string;
-  fgAngle: number;
-  background: Background;
-  bgColor1: string;
-  color2: string;
-  bgAngle: number;
-  pattern?: "none" | "dots" | "stripes" | "grid" | "checker" | "waves" | "cross";
-  noise?: number;
-  scale: number;
-  dx: number;
-  dy: number;
-  rotation: number;
-  shadow: boolean;
-  appName: string;
-  size: number;
-  mask: "none" | "squircle" | "round" | "circle" | "star" | "diamond" | "triangle" | "teardrop" | "hex" | "custom";
-  maskRadius: number;
-  maskPad: number;
-  customMask: string;
-  strokeEnabled: boolean;
-  strokeWidth: number;
-  strokeColor: string;
-  glowEnabled: boolean;
-  glowBlur: number;
-  glowColor: string;
-  badgeEnabled: boolean;
-  badgeText: string;
-  badgeColor: string;
-  badgePosition: "top-right" | "bottom-right" | "bottom-left";
+export type SavedDraftState = ExportDesignState & {
   updatedAt?: number;
-}
+};
 
 export interface MaskOption {
-  id: "squircle" | "round" | "circle" | "none" | "star" | "diamond" | "triangle" | "teardrop" | "custom";
+  id: "squircle" | "round" | "circle" | "none" | "hex" | "star" | "diamond" | "triangle" | "teardrop" | "shield" | "custom";
   labelZh: string;
   labelEn: string;
 }
@@ -60,11 +22,33 @@ export const MASK_OPTIONS: MaskOption[] = [
   { id: "round", labelZh: "圆角矩形", labelEn: "Rounded Rect" },
   { id: "circle", labelZh: "圆形", labelEn: "Circle" },
   { id: "none", labelZh: "全出血", labelEn: "Full Bleed" },
+  { id: "hex", labelZh: "六边形", labelEn: "Hexagon" },
   { id: "star", labelZh: "星形", labelEn: "Star" },
   { id: "diamond", labelZh: "菱形", labelEn: "Diamond" },
   { id: "triangle", labelZh: "三角", labelEn: "Triangle" },
   { id: "teardrop", labelZh: "水滴", labelEn: "Teardrop" },
+  { id: "shield", labelZh: "盾牌", labelEn: "Shield" },
   { id: "custom", labelZh: "自定义", labelEn: "Custom" },
+];
+
+export const FONTS_LIST = [
+  { id: "Inter, sans-serif", name: "Inter" },
+  { id: "'Noto Sans SC', sans-serif", name: "Noto Sans SC" },
+  { id: "'Noto Serif SC', serif", name: "Noto Serif SC" },
+  { id: "'Bebas Neue', sans-serif", name: "Bebas Neue" },
+  { id: "'Lobster', cursive", name: "Lobster" },
+  { id: "'Pacifico', cursive", name: "Pacifico" },
+  { id: "'Righteous', cursive", name: "Righteous" },
+  { id: "'Comfortaa', cursive", name: "Comfortaa" },
+  { id: "'Orbitron', sans-serif", name: "Orbitron" },
+  { id: "'Caveat', cursive", name: "Caveat" },
+  { id: "'Abril Fatface', cursive", name: "Abril Fatface" },
+  { id: "'Press Start 2P', monospace", name: "Press Start 2P" },
+  { id: "'ZCOOL KuaiLe', cursive", name: "ZCOOL KuaiLe" },
+  { id: "'Ma Shan Zheng', cursive", name: "Ma Shan Zheng" },
+  { id: "Georgia, serif", name: "Georgia" },
+  { id: "'Arial Black', sans-serif", name: "Arial Black" },
+  { id: "'Courier New', monospace", name: "Courier New" },
 ];
 
 export interface GradientPreset {

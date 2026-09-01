@@ -2,24 +2,41 @@ import AppMark from "@/features/editor/components/AppMark";
 import type { ExportDesignState } from "@/features/export";
 import type { Background, Shape } from "@/features/editor/model";
 
-interface PreviewBaseProps {
-  iconSvg?: string;
+export interface PreviewBaseProps {
   shape: Shape;
   fg: string;
   fgType?: "solid" | "gradient";
   fgColor2?: string;
   fgAngle?: number;
+  sourceMode?: ExportDesignState["sourceMode"];
+  customText?: string;
+  fontFamily?: string;
+  fontWeight?: number;
+  emojiChar?: string;
+  customImageDataUrl?: string;
   background: Background;
   bgColor1?: string;
   color2: string;
   bgAngle?: number;
   pattern?: ExportDesignState["pattern"];
+  patternOpacity?: number;
+  patternSize?: number;
   noise?: number;
-  rotation: number;
-  scale: number;
-  dx: number;
-  dy: number;
-  shadow: boolean;
+  rotation?: number;
+  scale?: number;
+  dx?: number;
+  dy?: number;
+  shadow?: boolean;
+  shadowPreset?: "none" | "soft" | "hard" | "long";
+  shadowOffsetX?: number;
+  shadowOffsetY?: number;
+  shadowBlur?: number;
+  shadowAlpha?: number;
+  shadowColor?: string;
+  gloss?: "none" | "top" | "bevel";
+  innerBorder?: boolean;
+  layersVisible?: { fg: boolean; bg: boolean; badge: boolean };
+  iconSvg?: string;
   mask?: ExportDesignState["mask"];
   maskRadius?: number;
   maskPad?: number;
@@ -31,9 +48,12 @@ interface PreviewBaseProps {
   glowBlur?: number;
   glowColor?: string;
   badgeEnabled?: boolean;
+  badgeStyle?: "corner" | "bottom" | "dot";
   badgeText?: string;
+  badgeBg?: string;
   badgeColor?: string;
   badgePosition?: ExportDesignState["badgePosition"];
+  badgeSize?: number;
   appName?: string;
 }
 
@@ -43,9 +63,9 @@ interface PreviewBaseProps {
 export function AndroidShapeGrid(props: PreviewBaseProps) {
   const shapes: Array<{ label: string; mask: ExportDesignState["mask"]; radius?: number }> = [
     { label: "圆形", mask: "circle" },
-    { label: "Squircle", mask: "none" },
-    { label: "圆角", mask: "squircle", radius: 16 },
-    { label: "方形", mask: "squircle", radius: 0 },
+    { label: "Squircle", mask: "squircle", radius: 22 },
+    { label: "圆角", mask: "round", radius: 16 },
+    { label: "方形", mask: "none" },
   ];
 
   return (
@@ -63,7 +83,7 @@ export function AndroidShapeGrid(props: PreviewBaseProps) {
 }
 
 /**
- * Android 13 主题图标与桌面通知横条
+ * Android 13 主题图标与通知栏 24dp
  */
 export function AndroidNotificationBar(props: PreviewBaseProps) {
   return (
@@ -94,45 +114,41 @@ export function AndroidNotificationBar(props: PreviewBaseProps) {
             <div className="notif-line notif-desc" />
           </div>
         </div>
-        <span className="shape-cell-label">桌面通知 24dp</span>
+        <span className="shape-cell-label">通知栏 24dp</span>
       </div>
     </div>
   );
 }
 
 /**
- * iOS 主屏幕桌面拟真与 iOS 18 深色图标
+ * iOS / iPadOS（App Store 1024 + 主屏幕 + iOS 18 深色）
  */
 export function IosHomeScreenGrid(props: PreviewBaseProps) {
   return (
     <div className="preview-ios-grid">
       <div className="preview-shape-cell">
-        <div className="shape-mark-box large">
-          <AppMark {...props} mask="none" />
+        <div className="shape-mark-box large ios-squircle">
+          <AppMark {...props} mask="squircle" maskRadius={22} />
         </div>
         <span className="shape-cell-label">App Store 1024</span>
       </div>
 
       <div className="ios-springboard-cell">
         <div className="springboard-dock">
-          <div className="springboard-icon">
-            <AppMark {...props} mask="none" />
+          <div className="springboard-icon ios-squircle">
+            <AppMark {...props} mask="squircle" maskRadius={22} />
           </div>
           <span className="springboard-name">{props.appName || "My App"}</span>
-          <div className="springboard-dots">
-            <span className="dot active" />
-            <span className="dot" />
-            <span className="dot" />
-          </div>
         </div>
         <span className="shape-cell-label">主屏幕</span>
       </div>
 
       <div className="preview-shape-cell">
-        <div className="shape-mark-box large dark-theme-box">
+        <div className="shape-mark-box large dark-theme-box ios-squircle">
           <AppMark
             {...props}
-            mask="none"
+            mask="squircle"
+            maskRadius={22}
             background="solid"
             bgColor1="#1c1c1e"
             color2="#1c1c1e"
@@ -147,27 +163,118 @@ export function IosHomeScreenGrid(props: PreviewBaseProps) {
 }
 
 /**
- * Web 拟真浏览器标签页预览
+ * Web / PWA（favicon 32 + PWA 512 + Maskable 安全区 + OG 社交图 1200×630）
  */
 export function WebTabSimulator(props: PreviewBaseProps) {
   return (
-    <div className="preview-web-grid">
-      <div className="browser-tab-preview">
-        <div className="browser-tab-pill">
-          <div className="tab-favicon">
-            <AppMark {...props} mask="squircle" maskRadius={4} shadow={false} />
+    <div className="preview-web-container">
+      <div className="preview-web-grid">
+        <div className="browser-tab-preview">
+          <div className="browser-tab-pill">
+            <div className="tab-favicon">
+              <AppMark {...props} mask="round" maskRadius={4} shadow={false} />
+            </div>
+            <span className="tab-title">{props.appName || "My App"}</span>
+            <span className="tab-close">×</span>
           </div>
-          <span className="tab-title">{props.appName || "My App"}</span>
-          <span className="tab-close">×</span>
+          <span className="shape-cell-label">favicon 32</span>
         </div>
-        <span className="shape-cell-label">favicon 32</span>
+
+        <div className="preview-shape-cell">
+          <div className="shape-mark-box large">
+            <AppMark {...props} mask="squircle" maskRadius={16} />
+          </div>
+          <span className="shape-cell-label">PWA 512</span>
+        </div>
+
+        <div className="preview-shape-cell">
+          <div className="shape-mark-box large maskable-box">
+            <AppMark {...props} mask="none" />
+            <div className="maskable-safe-circle" />
+          </div>
+          <span className="shape-cell-label">Maskable 安全区</span>
+        </div>
       </div>
 
-      <div className="preview-shape-cell">
-        <div className="shape-mark-box large">
-          <AppMark {...props} mask="none" />
+      {/* OG 社交分享图 */}
+      <div className="og-social-card">
+        <div className="og-inner">
+          <div className="og-mark-wrap">
+            <AppMark {...props} mask="squircle" maskRadius={20} />
+          </div>
+          <div className="og-text-wrap">
+            <h4 className="og-title">{props.appName || "My App"}</h4>
+            <p className="og-subtitle">Made with QM icon</p>
+          </div>
         </div>
-        <span className="shape-cell-label">PWA 512</span>
+        <span className="shape-cell-label">OG 社交分享图 1200×630</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * macOS / Windows（macOS Dock 真实磨砂 + Windows 动态磁贴）
+ */
+export function MacWindowsPreview(props: PreviewBaseProps) {
+  return (
+    <div className="preview-desktop-grid">
+      <div className="macos-dock-cell">
+        <div className="macos-dock-bar">
+          <div className="dock-icon-box">
+            <AppMark {...props} mask="squircle" maskRadius={22} />
+          </div>
+        </div>
+        <span className="shape-cell-label">macOS Dock</span>
+      </div>
+
+      <div className="windows-tile-cell">
+        <div className="windows-tile-box">
+          <AppMark {...props} mask="none" shadow={false} />
+        </div>
+        <span className="shape-cell-label">Windows 磁贴</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * watchOS / Apple TV / 商店卡片
+ */
+export function WatchAppleTvPreview(props: PreviewBaseProps) {
+  return (
+    <div className="preview-watch-tv-container">
+      <div className="preview-watch-tv-grid">
+        <div className="watchos-cell">
+          <div className="watchos-box">
+            <AppMark {...props} mask="circle" />
+          </div>
+          <span className="shape-cell-label">watchOS</span>
+        </div>
+
+        <div className="apple-tv-cell">
+          <div className="apple-tv-box">
+            <div className="apple-tv-icon-center">
+              <AppMark {...props} mask="none" shadow={false} />
+            </div>
+          </div>
+          <span className="shape-cell-label">Apple TV</span>
+        </div>
+      </div>
+
+      {/* App Store 商店卡片 */}
+      <div className="store-preview-card">
+        <div className="store-card-inner">
+          <div className="store-card-mark">
+            <AppMark {...props} mask="squircle" maskRadius={20} />
+          </div>
+          <div className="store-card-info">
+            <h4 className="store-card-name">{props.appName || "My App"}</h4>
+            <div className="store-card-rating">★★★★★ · 免费</div>
+            <button className="store-card-btn" type="button">获取</button>
+          </div>
+        </div>
+        <span className="shape-cell-label">商店卡片</span>
       </div>
     </div>
   );
