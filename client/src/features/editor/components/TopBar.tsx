@@ -1,4 +1,4 @@
-import { Download, Globe2, HelpCircle, History, Moon, Share2, Shuffle, Sun } from "lucide-react";
+import { Download, Globe2, HelpCircle, History, Moon, Share2, Shuffle, Sun, Zap } from "lucide-react";
 import { getTranslation, type Language } from "@/features/i18n";
 
 export default function TopBar({
@@ -28,13 +28,15 @@ export default function TopBar({
     <header className="topbar">
       <div className="brand-lockup">
         <div className="brand-mark">
-          <img src="/manus-storage/qm-mark_ac9d1081.png" alt="QM icon" />
+          <Zap size={16} fill="#f59e0b" color="#f59e0b" />
         </div>
         <div>
           <div className="brand-name">
-            QM <em>icon</em>
+            QM <span className="brand-highlight">icon</span>
           </div>
-          <div className="brand-subtitle">{t.topbar.subtitle}</div>
+          <div className="brand-subtitle">
+            {lang === "ZH" ? "免注册 · 纯浏览器 · 14+ 平台" : "No Login · Browser Only · 14+ Platforms"}
+          </div>
         </div>
       </div>
       <div className="top-actions">

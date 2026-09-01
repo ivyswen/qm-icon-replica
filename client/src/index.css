@@ -472,6 +472,63 @@ textarea { width: 100%; min-height: 48px; padding: 7px; border: 1px solid var(--
 .clear-history { width: 100%; height: 30px; margin-top: 14px; border: 1px solid #e7b5b5; border-radius: 6px; color: #b34f4f; background: transparent; cursor: pointer; font-size: 10px; }
 .clear-history:hover { background: #fff4f4; }
 
+/* ═══════════ 对齐设计图：新增拟真预览与高质感组件样式 ═══════════ */
+.brand-mark { width: 30px; height: 30px; border-radius: 8px; background: #161b22; border: 1px solid #30363d; display: grid; place-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+.brand-highlight { color: #f59e0b; font-style: normal; font-weight: 700; }
+
+.icon-quick-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; padding: 5px; background: rgba(0,0,0,0.18); border-radius: 8px; border: 1px solid var(--line); margin-bottom: 8px; max-height: 140px; overflow-y: auto; }
+.icon-quick-btn { height: 26px; border: 1px solid transparent; border-radius: 5px; background: transparent; color: #8b949e; display: grid; place-items: center; cursor: pointer; transition: all .12s; padding: 0; }
+.icon-quick-btn:hover { background: rgba(255,255,255,0.08); color: var(--ink); border-color: var(--line); }
+.icon-quick-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); box-shadow: 0 1px 4px rgba(15,118,110,0.3); }
+
+.swatch-bar { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.swatch-circle { width: 13px; height: 13px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.25); cursor: pointer; transition: transform 0.1s, border-color 0.1s; padding: 0; }
+.swatch-circle:hover { transform: scale(1.2); border-color: #fff; }
+.swatch-circle.active { box-shadow: 0 0 0 2px var(--teal); transform: scale(1.15); }
+
+.contrast-badge { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 999px; background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 8.5px; font-weight: 600; border: 1px solid rgba(16, 185, 129, 0.3); margin-left: 8px; white-space: nowrap; flex-shrink: 0; }
+
+.canvas-size-spec { margin-top: 8px; color: #8b949e; font-size: 9.5px; text-align: center; letter-spacing: 0.02em; }
+.canvas-actions-bar { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 8px; width: min(100%, 540px); }
+.canvas-actions-bar button { height: 24px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 9px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; transition: all .14s; }
+.canvas-actions-bar button:hover { border-color: var(--teal); color: var(--teal); }
+
+.preview-shape-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 8px; }
+.preview-shape-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.shape-mark-box { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 8px; }
+.shape-mark-box.large { width: 50px; height: 50px; }
+.shape-cell-label { font-size: 8px; color: #8b949e; white-space: nowrap; }
+
+.preview-duo-row { display: grid; grid-template-columns: 1fr 1.3fr; gap: 6px; margin-bottom: 8px; }
+.themed-icon-cell, .notification-bar-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.themed-icon-box { width: 42px; height: 42px; display: grid; place-items: center; }
+.notification-inner { width: 100%; height: 42px; border-radius: 8px; background: #1c2128; border: 1px solid #30363d; display: flex; align-items: center; gap: 6px; padding: 5px 7px; box-sizing: border-box; }
+.notification-icon { width: 22px; height: 22px; flex-shrink: 0; }
+.notification-content { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.notif-line { height: 3px; border-radius: 2px; background: #484f58; }
+.notif-title { width: 55%; }
+.notif-desc { width: 85%; opacity: 0.6; }
+
+.preview-ios-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+.ios-springboard-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.springboard-dock { width: 100%; height: 64px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 3px; box-sizing: border-box; }
+.springboard-icon { width: 30px; height: 30px; }
+.springboard-name { font-size: 7.5px; color: #fff; font-weight: 500; max-width: 48px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.springboard-dots { display: flex; gap: 2px; margin-top: 1px; }
+.springboard-dots .dot { width: 2.5px; height: 2.5px; border-radius: 50%; background: rgba(255,255,255,0.25); }
+.springboard-dots .dot.active { background: #fff; }
+
+.preview-web-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 6px; margin-bottom: 8px; }
+.browser-tab-preview { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.browser-tab-pill { width: 100%; height: 30px; border-radius: 6px 6px 0 0; background: #1c2128; border: 1px solid #30363d; display: flex; align-items: center; gap: 4px; padding: 0 6px; box-sizing: border-box; }
+.tab-favicon { width: 15px; height: 15px; flex-shrink: 0; }
+.tab-title { font-size: 8px; color: #c9d1d9; max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.tab-close { font-size: 10px; color: #8b949e; }
+
+.export-actions-right { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-shrink: 0; }
+.file-list-btn { height: 26px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 9px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; transition: all .16s; flex-shrink: 0; }
+.file-list-btn:hover { border-color: var(--teal); color: var(--teal); }
+
 @media (max-width: 1120px) {
   .workbench { min-width: 760px; }
   .workspace { grid-template-columns: 215px minmax(360px, 1fr) 230px; gap: 7px; padding-inline: 7px; }

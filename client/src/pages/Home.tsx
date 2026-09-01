@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronUp,
   Download,
+  Eye,
   Files,
   FlipHorizontal,
   Globe2,
@@ -37,6 +38,7 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getTranslation, type Language } from "@/features/i18n";
+import { calculateContrastRatio, PRESET_SWATCHES } from "@/lib/color";
 import { buildZipPlan, exportFormat, exportZip, getPlatformConfigFiles, type ExportDesignState, type ExportFormat, type ExportPlatform } from "@/features/export";
 import {
   fetchIconDetail,
@@ -61,7 +63,12 @@ import {
 import { DESIGN_TEMPLATES, type DesignTemplateKey } from "@/features/editor/data/templates";
 import { ControlGroup, Segmented, SliderField, TinyColor, Toggle } from "@/features/editor/components/EditorPrimitives";
 import AppMark from "@/features/editor/components/AppMark";
-import PlatformPreview from "@/features/editor/components/PlatformPreview";
+import PlatformPreview, {
+  AndroidShapeGrid,
+  AndroidNotificationBar,
+  IosHomeScreenGrid,
+  WebTabSimulator,
+} from "@/features/editor/components/PlatformPreview";
 import TopBar from "@/features/editor/components/TopBar";
 import type { Background, PreviewPlatform as Platform, SavedSnapshot, Shape } from "@/features/editor/model";
 
@@ -142,6 +149,8 @@ export default function Home() {
   const [badgeText, setBadgeText] = useState(initialDraft.badgeText);
   const [badgeColor, setBadgeColor] = useState(initialDraft.badgeColor);
   const [badgePosition, setBadgePosition] = useState<ExportDesignState["badgePosition"]>(initialDraft.badgePosition);
+
+  const contrastRatio = useMemo(() => calculateContrastRatio(fg, bgColor1 || "#f8fafc"), [fg, bgColor1]);
 
   const zipPlan = useMemo(() => buildZipPlan(selectedPlatforms), [selectedPlatforms]);
   const zipConfigFiles = useMemo(
@@ -763,13 +772,29 @@ export default function Home() {
             />
 
             {fgType === "solid" ? (
-              <TinyColor
-                value={fg}
-                onChange={(value) => {
-                  saveState();
-                  setFg(value);
-                }}
-              />
+              <>
+                <TinyColor
+                  value={fg}
+                  onChange={(value) => {
+                    saveState();
+                    setFg(value);
+                  }}
+                />
+                <div className="swatch-bar">
+                  {PRESET_SWATCHES.map((hex) => (
+                    <button
+                      key={hex}
+                      className={`swatch-circle ${fg.toLowerCase() === hex.toLowerCase() ? "active" : ""}`}
+                      style={{ backgroundColor: hex }}
+                      onClick={() => {
+                        saveState();
+                        setFg(hex);
+                      }}
+                      title={hex}
+                    />
+                  ))}
+                </div>
+              </>
             ) : (
               <>
                 <div className="color-pair">
@@ -1061,12 +1086,9 @@ export default function Home() {
                 setCanvasBg(value === t.canvas.dark ? "dark" : value === t.canvas.checker ? "checker" : "light")
               }
             />
-            <button className="zoom-button" onClick={() => setScale((value) => Math.max(10, value - 5))}>
-              −
-            </button>
-            <button className="zoom-button" onClick={() => setScale((value) => Math.min(250, value + 5))}>
-              +
-            </button>
+            <span className="contrast-badge" title="基于前景色与背景色的相对亮度计算">
+              {lang === "ZH" ? `对比度 ${contrastRatio}:1 ✓` : `Contrast ${contrastRatio}:1 ✓`}
+            </span>
           </div>
           <div
             className="canvas-wrap"
@@ -1113,8 +1135,8 @@ export default function Home() {
               />
             </div>
           </div>
-          <div className="canvas-caption">{t.canvas.caption}</div>
-          <div className="history-actions">
+          <div className="canvas-size-spec">1024 × 1024 px · 实时渲染</div>
+          <div className="canvas-actions-bar">
             <button
               onClick={() => {
                 if (undoStack.length === 0) return;
@@ -1149,30 +1171,11 @@ export default function Home() {
             </button>
             <button
               onClick={() => {
-                setShape("rocket");
-                setIconId(undefined);
-                setIconSvg(undefined);
-                setFg("#0f766e");
-                setFgType("solid");
-                setFgColor2("#3b82f6");
-                setFgAngle(90);
-                setBackground("linear");
-                setBgColor1("#dceee9");
-                setColor2("#f59e0b");
-                setBgAngle(135);
-                setScale(60);
-                setDx(0);
-                setDy(0);
-                setRotation(0);
-                setMask("none");
-                setShadow(true);
-                setGlowEnabled(false);
-                setStrokeEnabled(false);
-                setBadgeEnabled(false);
+                restoreSnapshot({ ...DEFAULT_DESIGN_DRAFT, id: "reset", savedAt: Date.now() });
                 toast.success(lang === "ZH" ? "已重置全部设置" : "Reset all settings");
               }}
             >
-              <RotateCcw size={12} />{t.canvas.resetAll}
+              <RotateCcw size={12} />{lang === "ZH" ? "重置全部" : "Reset All"}
             </button>
             <button onClick={saveToHistory}>
               <Save size={12} />{t.canvas.saveToHistory}
@@ -1214,10 +1217,8 @@ export default function Home() {
                 <strong>Android</strong>
                 <ChevronUp size={13} />
               </div>
-              <PlatformPreview
+              <AndroidShapeGrid
                 iconSvg={iconSvg}
-                kind="android"
-                label={lang === "ZH" ? "Android 13" : "Android 13"}
                 shape={shape}
                 fg={fg}
                 fgType={fgType}
@@ -1247,10 +1248,8 @@ export default function Home() {
                 badgeColor={badgeColor}
                 badgePosition={badgePosition}
               />
-              <PlatformPreview
+              <AndroidNotificationBar
                 iconSvg={iconSvg}
-                kind="android"
-                label={lang === "ZH" ? "Android 圆形图标" : "Android Round"}
                 shape={shape}
                 fg={fg}
                 fgType={fgType}
@@ -1265,8 +1264,10 @@ export default function Home() {
                 dx={dx}
                 dy={dy}
                 shadow={shadow}
-                mask="circle"
-                maskRadius={50}
+                mask={mask}
+                maskRadius={maskRadius}
+                maskPad={maskPad}
+                customMask={customMask}
                 strokeEnabled={strokeEnabled}
                 strokeWidth={strokeWidth}
                 strokeColor={strokeColor}
@@ -1286,10 +1287,8 @@ export default function Home() {
                 <strong>iOS / iPadOS</strong>
                 <ChevronUp size={13} />
               </div>
-              <PlatformPreview
+              <IosHomeScreenGrid
                 iconSvg={iconSvg}
-                kind="ios"
-                label="iOS 18"
                 shape={shape}
                 fg={fg}
                 fgType={fgType}
@@ -1318,24 +1317,7 @@ export default function Home() {
                 badgeText={badgeText}
                 badgeColor={badgeColor}
                 badgePosition={badgePosition}
-              />
-              <PlatformPreview
-                iconSvg={iconSvg}
-                kind="ios"
-                label="iOS 深色"
-                shape={shape}
-                fg="#e2e8f0"
-                fgType="solid"
-                background="solid"
-                bgColor1="#0f172a"
-                color2="#0f172a"
-                rotation={0}
-                scale={56}
-                dx={0}
-                dy={0}
-                shadow
-                mask="squircle"
-                maskRadius={22}
+                appName={appName}
               />
             </section>
           )}
@@ -1345,10 +1327,8 @@ export default function Home() {
                 <strong>Web / PWA</strong>
                 <ChevronUp size={13} />
               </div>
-              <PlatformPreview
+              <WebTabSimulator
                 iconSvg={iconSvg}
-                kind="web"
-                label="favicon"
                 shape={shape}
                 fg={fg}
                 fgType={fgType}
@@ -1377,103 +1357,7 @@ export default function Home() {
                 badgeText={badgeText}
                 badgeColor={badgeColor}
                 badgePosition={badgePosition}
-              />
-              <PlatformPreview
-                iconSvg={iconSvg}
-                kind="web"
-                label="PWA 512"
-                shape={shape}
-                fg={fg}
-                fgType={fgType}
-                fgColor2={fgColor2}
-                fgAngle={fgAngle}
-                background={background}
-                bgColor1={bgColor1}
-                color2={color2}
-                bgAngle={bgAngle}
-                rotation={rotation}
-                scale={scale}
-                dx={dx}
-                dy={dy}
-                shadow={shadow}
-                mask={mask}
-                maskRadius={maskRadius}
-                maskPad={maskPad}
-                customMask={customMask}
-                strokeEnabled={strokeEnabled}
-                strokeWidth={strokeWidth}
-                strokeColor={strokeColor}
-                glowEnabled={glowEnabled}
-                glowBlur={glowBlur}
-                glowColor={glowColor}
-                badgeEnabled={badgeEnabled}
-                badgeText={badgeText}
-                badgeColor={badgeColor}
-                badgePosition={badgePosition}
-              />
-              <PlatformPreview
-                iconSvg={iconSvg}
-                kind="web"
-                label={lang === "ZH" ? "Web 圆形图标" : "Web Circle"}
-                shape={shape}
-                fg={fg}
-                fgType={fgType}
-                fgColor2={fgColor2}
-                fgAngle={fgAngle}
-                background={background}
-                bgColor1={bgColor1}
-                color2={color2}
-                bgAngle={bgAngle}
-                rotation={rotation}
-                scale={scale}
-                dx={dx}
-                dy={dy}
-                shadow={shadow}
-                mask="circle"
-                maskRadius={50}
-                strokeEnabled={strokeEnabled}
-                strokeWidth={strokeWidth}
-                strokeColor={strokeColor}
-                glowEnabled={glowEnabled}
-                glowBlur={glowBlur}
-                glowColor={glowColor}
-                badgeEnabled={badgeEnabled}
-                badgeText={badgeText}
-                badgeColor={badgeColor}
-                badgePosition={badgePosition}
-              />
-              <PlatformPreview
-                iconSvg={iconSvg}
-                kind="web"
-                label="Open Graph"
-                shape={shape}
-                fg={fg}
-                fgType={fgType}
-                fgColor2={fgColor2}
-                fgAngle={fgAngle}
-                background={background}
-                bgColor1={bgColor1}
-                color2={color2}
-                bgAngle={bgAngle}
-                rotation={rotation}
-                scale={scale}
-                dx={dx}
-                dy={dy}
-                shadow={shadow}
-                mask={mask}
-                maskRadius={maskRadius}
-                maskPad={maskPad}
-                customMask={customMask}
-                strokeEnabled={strokeEnabled}
-                strokeWidth={strokeWidth}
-                strokeColor={strokeColor}
-                glowEnabled={glowEnabled}
-                glowBlur={glowBlur}
-                glowColor={glowColor}
-                badgeEnabled={badgeEnabled}
-                badgeText={badgeText}
-                badgeColor={badgeColor}
-                badgePosition={badgePosition}
+                appName={appName}
               />
             </section>
           )}
@@ -1894,14 +1778,6 @@ export default function Home() {
       )}
 
       <footer className="export-bar">
-        <div className="export-left">
-          <button onClick={() => setHistoryOpen(true)}>
-            <Files size={13} />{t.export.fileList}
-          </button>
-          <button className="zip-button" onClick={openZipPreview}>
-            <Download size={13} />{t.export.downloadZip}
-          </button>
-        </div>
         <div className="export-options">
           <span className="export-label">{t.export.platform}</span>
           {(
@@ -1925,18 +1801,18 @@ export default function Home() {
           ))}
         </div>
         <div className="format-options">
-          <span className="export-label">{t.export.format}</span>
+          <span className="export-label">{lang === "ZH" ? "附加格式" : "Extra Format"}</span>
           <button className={`check-pill ${format === "PNG" ? "checked" : ""}`} onClick={() => setFormat("PNG")}>
-            PNG
+            {format === "PNG" ? "✓ " : "○ "}PNG
           </button>
           <button className={`check-pill ${format === "WebP" ? "checked" : ""}`} onClick={() => setFormat("WebP")}>
-            WebP
+            {format === "WebP" ? "✓ " : "○ "}WebP
           </button>
           <button className={`check-pill ${format === "SVG" ? "checked" : ""}`} onClick={() => setFormat("SVG")}>
-            SVG
+            {format === "SVG" ? "✓ " : "○ "}SVG
           </button>
           <button className={`check-pill ${format === "ICO" ? "checked" : ""}`} onClick={() => setFormat("ICO")}>
-            ICO
+            {format === "ICO" ? "✓ " : "○ "}ICO
           </button>
           <span className="export-label size-label">{t.export.customSize}</span>
           <button className="minus-size" onClick={() => setSize((value) => Math.max(16, value - 64))} title="减少 64px">
@@ -1955,6 +1831,16 @@ export default function Home() {
           <button className="single-download-btn" onClick={download} title={lang === "ZH" ? `下载当前 ${format} 图标 (${size}px)` : `Download ${format} icon (${size}px)`}>
             <Download size={12} />
             {lang === "ZH" ? `下载 ${format}` : `Download ${format}`}
+          </button>
+        </div>
+        <div className="export-actions-right">
+          <button className="file-list-btn" onClick={openZipPreview} title={t.export.fileList}>
+            <Eye size={13} />
+            {lang === "ZH" ? "文件列表" : "Files"}
+          </button>
+          <button className="zip-button" onClick={openZipPreview}>
+            <Download size={13} />
+            {t.export.downloadZip}
           </button>
         </div>
       </footer>
