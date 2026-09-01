@@ -1,0 +1,190 @@
+# 使用 Pake 构建桌面应用
+name: Build Desktop App with Pake
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: '目标平台'
+        required: true
+        default: 'windows'
+        type: choice
+        options:
+          - windows
+          - macos
+          - linux
+          - all
+      name:
+        description: '应用名称'
+        required: false
+        default: 'QM icon Replica'
+      icon:
+        description: '自定义图标 (留空则使用默认配置；可输入本地路径或网络图标 URL)'
+        required: false
+        default: ''
+      width:
+        description: '窗口宽度'
+        required: false
+        default: '1280'
+      height:
+        description: '窗口高度'
+        required: false
+        default: '860'
+
+jobs:
+  build-windows:
+    if: ${{ github.event.inputs.platform == 'windows' || github.event.inputs.platform == 'all' }}
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Vite project
+        run: pnpm build
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Pake CLI
+        run: npm install -g pake-cli
+
+      - name: Build with Pake
+        shell: bash
+        run: |
+          ICON_ARG=""
+          if [ -n "${{ github.event.inputs.icon }}" ]; then
+            ICON_ARG="--icon ${{ github.event.inputs.icon }}"
+          elif [ -f "./client/public/icon.ico" ]; then
+            ICON_ARG="--icon ./client/public/icon.ico"
+          fi
+          pake dist/public/index.html --name "${{ github.event.inputs.name }}" --width ${{ github.event.inputs.width }} --height ${{ github.event.inputs.height }} $ICON_ARG --use-local-file
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QM-icon-Replica-Windows
+          path: |
+            *.exe
+            *.msi
+          retention-days: 7
+
+  build-macos:
+    if: ${{ github.event.inputs.platform == 'macos' || github.event.inputs.platform == 'all' }}
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Vite project
+        run: pnpm build
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Pake CLI
+        run: npm install -g pake-cli
+
+      - name: Build with Pake
+        shell: bash
+        run: |
+          ICON_ARG=""
+          if [ -n "${{ github.event.inputs.icon }}" ]; then
+            ICON_ARG="--icon ${{ github.event.inputs.icon }}"
+          elif [ -f "./client/public/icon.png" ]; then
+            ICON_ARG="--icon ./client/public/icon.png"
+          fi
+          pake dist/public/index.html --name "${{ github.event.inputs.name }}" --width ${{ github.event.inputs.width }} --height ${{ github.event.inputs.height }} $ICON_ARG --use-local-file
+        env:
+          PAKE_CREATE_APP: 1
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QM-icon-Replica-macOS
+          path: |
+            *.dmg
+            *.app
+          retention-days: 7
+
+  build-linux:
+    if: ${{ github.event.inputs.platform == 'linux' || github.event.inputs.platform == 'all' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Vite project
+        run: pnpm build
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Pake CLI
+        run: npm install -g pake-cli
+
+      - name: Build with Pake
+        shell: bash
+        run: |
+          ICON_ARG=""
+          if [ -n "${{ github.event.inputs.icon }}" ]; then
+            ICON_ARG="--icon ${{ github.event.inputs.icon }}"
+          elif [ -f "./client/public/icon.png" ]; then
+            ICON_ARG="--icon ./client/public/icon.png"
+          fi
+          pake dist/public/index.html --name "${{ github.event.inputs.name }}" --width ${{ github.event.inputs.width }} --height ${{ github.event.inputs.height }} $ICON_ARG --use-local-file
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QM-icon-Replica-Linux
+          path: |
+            *.deb
+            *.AppImage
+          retention-days: 7
