@@ -4,11 +4,14 @@ import type { Background, Shape } from "@/features/editor/model";
 import { BUILTIN_ICONS } from "@/features/icons/data/builtinIcons";
 
 function angleToCoordinates(angleInDegrees: number = 90) {
+  // CSS linear-gradient(deg): 0deg = to top, 90deg = to right, 135deg = to bottom-right, 180deg = to bottom
   const rad = ((angleInDegrees % 360) * Math.PI) / 180;
-  const x1 = Math.round(50 - Math.cos(rad) * 50);
-  const y1 = Math.round(50 - Math.sin(rad) * 50);
-  const x2 = Math.round(50 + Math.cos(rad) * 50);
-  const y2 = Math.round(50 + Math.sin(rad) * 50);
+  const sin = Math.sin(rad);
+  const cos = Math.cos(rad);
+  const x1 = Math.round(50 - sin * 50);
+  const y1 = Math.round(50 + cos * 50);
+  const x2 = Math.round(50 + sin * 50);
+  const y2 = Math.round(50 - cos * 50);
   return { x1: `${x1}%`, y1: `${y1}%`, x2: `${x2}%`, y2: `${y2}%` };
 }
 

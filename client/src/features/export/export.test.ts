@@ -56,6 +56,18 @@ describe("createSvgMarkup - 前景渐变与控制能力 (TDD)", () => {
   });
 
   it("背景渐变角度 bgAngle 应该根据角度正确计算 linearGradient 的坐标", () => {
+    const svg135 = createSvgMarkup({
+      ...baseState,
+      background: "linear",
+      bgAngle: 135,
+      bgColor1: "#111111",
+      color2: "#222222",
+    });
+    expect(svg135).toContain('id="bg-linear"');
+    expect(svg135).toContain('x1="15%" y1="15%" x2="85%" y2="85%"');
+    expect(svg135).toContain('stop-color="#111111"');
+    expect(svg135).toContain('stop-color="#222222"');
+
     const svg90 = createSvgMarkup({
       ...baseState,
       background: "linear",
@@ -63,9 +75,7 @@ describe("createSvgMarkup - 前景渐变与控制能力 (TDD)", () => {
       bgColor1: "#111111",
       color2: "#222222",
     });
-    expect(svg90).toContain('id="bg-linear"');
-    expect(svg90).toContain('stop-color="#111111"');
-    expect(svg90).toContain('stop-color="#222222"');
+    expect(svg90).toContain('x1="0%" y1="50%" x2="100%" y2="50%"');
   });
 
   it("支持超大缩放范围（如 200%）与偏移量（dx, dy），transform 保持在 50+dx, 50+dy 和 scale/60", () => {

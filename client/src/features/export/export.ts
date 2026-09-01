@@ -53,11 +53,14 @@ function escapeXml(value: string) {
 }
 
 function angleToCoordinates(angleInDegrees: number = 135) {
+  // CSS linear-gradient(deg): 0deg = to top, 90deg = to right, 135deg = to bottom-right, 180deg = to bottom
   const rad = ((angleInDegrees % 360) * Math.PI) / 180;
-  const x1 = Math.round(50 - Math.cos(rad) * 50);
-  const y1 = Math.round(50 - Math.sin(rad) * 50);
-  const x2 = Math.round(50 + Math.cos(rad) * 50);
-  const y2 = Math.round(50 + Math.sin(rad) * 50);
+  const sin = Math.sin(rad);
+  const cos = Math.cos(rad);
+  const x1 = Math.round(50 - sin * 50);
+  const y1 = Math.round(50 + cos * 50);
+  const x2 = Math.round(50 + sin * 50);
+  const y2 = Math.round(50 - cos * 50);
   return { x1: `${x1}%`, y1: `${y1}%`, x2: `${x2}%`, y2: `${y2}%` };
 }
 
@@ -108,7 +111,7 @@ export function createSvgMarkup(state: ExportDesignState) {
       <stop offset="0%" stop-color="${escapeXml(startBgColor)}"/><stop offset="53%" stop-color="#f8fafc"/><stop offset="100%" stop-color="${escapeXml(state.color2)}"/>
     </linearGradient>
     <radialGradient id="bg-radial" cx="25%" cy="20%" r="80%">
-      <stop offset="0%" stop-color="${escapeXml(state.color2)}"/><stop offset="100%" stop-color="${escapeXml(startBgColor)}"/>
+      <stop offset="0%" stop-color="${escapeXml(state.color2)}"/><stop offset="72%" stop-color="${escapeXml(startBgColor)}"/>
     </radialGradient>
     <linearGradient id="bg-conic" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="${escapeXml(state.color2)}"/><stop offset="50%" stop-color="${escapeXml(startBgColor)}"/><stop offset="100%" stop-color="${escapeXml(state.color2)}"/>
@@ -117,8 +120,9 @@ export function createSvgMarkup(state: ExportDesignState) {
       <stop offset="0%" stop-color="${escapeXml(startBgColor)}"/><stop offset="48%" stop-color="#ffffff"/><stop offset="100%" stop-color="${escapeXml(state.color2 || "#fff2d6")}"/>
     </linearGradient>
     <radialGradient id="bg-gloss" cx="70%" cy="15%" r="45%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32"/>
-      <stop offset="80%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
     ${fgGradientDef}`;
 
