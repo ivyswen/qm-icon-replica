@@ -25,24 +25,42 @@
   --accent-dot6: #8b5cf6;
 }
 
-.dark-mode {
-  --bg-app: #0f172a;
-  --bg-panel: #1e293b;
-  --bg-subtle: #0f172a;
+:root.dark,
+.dark,
+.dark-mode,
+[data-theme="dark"] {
+  --bg-app: #0b1120;
+  --bg-panel: #151e2e;
+  --bg-subtle: #1e293b;
   --border-color: #334155;
-  --border-light: #1e293b;
+  --border-light: #243044;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --text-subtle: #64748b;
   --primary: #10b981;
   --primary-hover: #34d399;
-  --primary-light: #064e3b;
+  --primary-light: rgba(16, 185, 129, 0.15);
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-subtle);
 }
 
 body {
@@ -54,6 +72,21 @@ body {
   height: 100vh;
   width: 100vw;
   font-size: 13px;
+}
+
+/* 图标核心渲染组件样式 */
+.app-mark {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mark-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 /* 整体工作台骨架 */
@@ -134,6 +167,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
 }
 
 .panel.left {
@@ -144,12 +179,85 @@ body {
   border-left: 1px solid var(--border-color);
 }
 
+.panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}
+
+.panel::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+:root:not(.dark):not(.dark-mode) .panel::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+:root:not(.dark):not(.dark-mode) .panel::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* 折叠指示器：统一所有手风琴（主手风琴、子手风琴、多平台预览卡片） */
+details.acc > summary,
+details.mini-acc > summary,
+details.pv-card > summary {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  user-select: none;
+  gap: 8px;
+}
+
+details.acc > summary::-webkit-details-marker,
+details.mini-acc > summary::-webkit-details-marker,
+details.pv-card > summary::-webkit-details-marker {
+  display: none !important;
+}
+
+details.acc > summary::after,
+details.mini-acc > summary::after,
+details.pv-card > summary::after {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(-45deg);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+details.acc[open] > summary::after,
+details.mini-acc[open] > summary::after,
+details.pv-card[open] > summary::after {
+  transform: rotate(45deg);
+  border-color: var(--primary);
+}
+
+details.acc > summary:hover::after,
+details.mini-acc > summary:hover::after,
+details.pv-card > summary:hover::after {
+  border-color: var(--text-main);
+}
+
 /* 手风琴折叠菜单 (details / summary) */
 details.acc {
+  flex-shrink: 0;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   background: var(--bg-panel);
   overflow: hidden;
+  transition: border-color 0.15s ease;
 }
 
 details.acc > summary {
@@ -157,33 +265,32 @@ details.acc > summary {
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   list-style: none;
   background: var(--bg-panel);
-  transition: background 0.15s ease;
-}
-
-details.acc > summary::-webkit-details-marker {
-  display: none;
+  color: var(--text-main);
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 details.acc > summary:hover {
   background: var(--bg-subtle);
 }
 
+details.acc[open] > summary {
+  border-bottom: 1px solid var(--border-color);
+}
+
 details.acc > .acc-body {
   padding: 12px;
-  border-top: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background: var(--bg-panel);
 }
 
 /* 子手风琴 */
 details.mini-acc {
-  border: 1px solid var(--border-light);
+  flex-shrink: 0;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   background: var(--bg-subtle);
   overflow: hidden;
@@ -195,19 +302,21 @@ details.mini-acc > summary {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
   list-style: none;
+  color: var(--text-main);
+  transition: background 0.15s ease;
 }
 
-details.mini-acc > summary::-webkit-details-marker {
-  display: none;
+details.mini-acc > summary:hover {
+  background: var(--bg-panel);
+}
+
+details.mini-acc[open] > summary {
+  border-bottom: 1px solid var(--border-light);
 }
 
 details.mini-acc > .acc-body {
   padding: 10px;
-  border-top: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -219,6 +328,7 @@ details.mini-acc > .acc-body {
   height: 8px;
   border-radius: 50%;
   display: inline-block;
+  flex-shrink: 0;
 }
 .dot.d1 { background-color: var(--accent-dot1); }
 .dot.d2 { background-color: var(--accent-dot2); }
@@ -258,7 +368,7 @@ details.mini-acc > .acc-body {
 .seg button.active {
   background: var(--bg-panel);
   color: var(--text-main);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   font-weight: 600;
 }
 
@@ -304,7 +414,7 @@ details.mini-acc > .acc-body {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
   padding: 4px;
@@ -324,6 +434,7 @@ details.mini-acc > .acc-body {
   background: transparent;
   cursor: pointer;
   color: var(--text-main);
+  transition: background 0.12s ease;
 }
 
 .source-menu button:hover {
@@ -369,11 +480,17 @@ details.mini-acc > .acc-body {
   background: var(--bg-subtle);
   color: var(--text-main);
   outline: none;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .input:focus {
   border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
 }
 
 .input.mono {
@@ -385,6 +502,51 @@ details.mini-acc > .acc-body {
   width: 60px;
   padding: 4px 6px;
   font-size: 12px;
+}
+
+/* 范围滑动条美化 */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--border-color);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+input[type="range"]:hover {
+  background: var(--text-subtle);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--bg-panel);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  background: var(--primary-hover);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--bg-panel);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
 }
 
 /* 按钮通用 */
@@ -411,12 +573,13 @@ details.mini-acc > .acc-body {
 }
 
 .btn.ghost {
-  background: transparent;
+  background: var(--bg-subtle);
   border-color: var(--border-color);
   color: var(--text-main);
 }
 .btn.ghost:hover {
-  background: var(--bg-subtle);
+  background: var(--bg-panel);
+  border-color: var(--text-subtle);
 }
 
 .btn.small {
@@ -426,10 +589,11 @@ details.mini-acc > .acc-body {
 
 .btn.danger {
   color: #ef4444;
-  border-color: #fecaca;
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
 }
 .btn.danger:hover {
-  background: #fee2e2;
+  background: rgba(239, 68, 68, 0.16);
 }
 
 .btn.icon-only {
@@ -461,6 +625,7 @@ details.mini-acc > .acc-body {
 
 .chip:hover {
   color: var(--text-main);
+  border-color: var(--text-subtle);
 }
 
 .chip.active {
@@ -468,6 +633,11 @@ details.mini-acc > .acc-body {
   border-color: var(--primary);
   color: var(--primary);
   font-weight: 600;
+}
+
+.dark-mode .chip.active,
+.dark .chip.active {
+  color: #34d399;
 }
 
 .chip.mini {
@@ -514,6 +684,13 @@ details.mini-acc > .acc-body {
   color: var(--primary);
 }
 
+.dark-mode .clip-grid button:hover,
+.dark-mode .clip-grid button.active,
+.dark .clip-grid button:hover,
+.dark .clip-grid button.active {
+  color: #34d399;
+}
+
 .clip-grid.emoji {
   grid-template-columns: repeat(7, 1fr);
   font-size: 18px;
@@ -529,7 +706,7 @@ details.mini-acc > .acc-body {
 .grad-presets button {
   aspect-ratio: 1;
   border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.15);
   cursor: pointer;
   transition: transform 0.15s ease;
 }
@@ -564,7 +741,7 @@ details.mini-acc > .acc-body {
 .template-icon-card:hover {
   border-color: var(--primary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* 形状蒙版与纹理网格 */
@@ -598,6 +775,13 @@ details.mini-acc > .acc-body {
   font-weight: 600;
 }
 
+.dark-mode .shape-grid button.active,
+.dark-mode .texture-grid button.active,
+.dark .shape-grid button.active,
+.dark .texture-grid button.active {
+  color: #34d399;
+}
+
 /* 调色盘与色块条 */
 .color-row {
   display: flex;
@@ -628,7 +812,7 @@ details.mini-acc > .acc-body {
   border-radius: 50%;
   display: inline-block;
   cursor: pointer;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.2);
   transition: transform 0.1s ease;
 }
 
@@ -699,9 +883,14 @@ p.hint {
   border-radius: 12px;
   font-size: 11px;
   font-weight: 600;
-  background: #ecfdf5;
-  color: #059669;
-  border: 1px solid #a7f3d0;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.dark-mode .contrast-pill,
+.dark .contrast-pill {
+  color: #34d399;
 }
 
 .stage-canvas-wrap {
@@ -713,25 +902,34 @@ p.hint {
   justify-content: center;
   border-radius: 16px;
   position: relative;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  border: 1px solid var(--border-color);
 }
 
 .stage-canvas-wrap.light {
-  background: #ffffff;
+  background: #f8fafc;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
+.dark-mode .stage-canvas-wrap.light,
+.dark .stage-canvas-wrap.light {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
 .stage-canvas-wrap.dark {
-  background: #0f172a;
+  background: #090d16;
+  border-color: #1e293b;
 }
 
 .stage-canvas-wrap.checker {
-  background-image: linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
-    linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
-    linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+  background-image: linear-gradient(45deg, var(--border-color) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--border-color) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--border-color) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--border-color) 75%);
   background-size: 16px 16px;
   background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  background-color: var(--bg-panel);
 }
 
 .main-canvas-shadow {
@@ -740,7 +938,7 @@ p.hint {
   display: flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.15));
+  filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.25));
 }
 
 .stage-info {
@@ -763,7 +961,8 @@ p.hint {
 
 .appname-row label {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text-main);
+  font-weight: 500;
   white-space: nowrap;
 }
 
@@ -777,6 +976,7 @@ p.hint {
 }
 
 details.pv-card {
+  flex-shrink: 0;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   background: var(--bg-panel);
@@ -790,6 +990,11 @@ details.pv-card > summary {
   font-weight: 600;
   cursor: pointer;
   background: var(--bg-subtle);
+  color: var(--text-main);
+}
+
+details.pv-card[open] > summary {
+  border-bottom: 1px solid var(--border-color);
 }
 
 .preview-shape-grid {
@@ -819,6 +1024,7 @@ details.pv-card > summary {
 .shape-cell-label {
   font-size: 10px;
   color: var(--text-muted);
+  font-weight: 500;
 }
 
 .preview-duo-row {
@@ -931,6 +1137,7 @@ details.pv-card > summary {
   border-radius: 4px;
   padding: 3px 8px;
   font-size: 11px;
+  color: var(--text-main);
 }
 
 .tab-favicon {
@@ -982,6 +1189,7 @@ details.pv-card > summary {
 .og-title {
   font-size: 12px;
   font-weight: 600;
+  color: var(--text-main);
 }
 
 .og-subtitle {
@@ -998,12 +1206,12 @@ details.pv-card > summary {
 }
 
 .macos-dock-bar {
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 12px;
   padding: 6px 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .dock-icon-box {
@@ -1019,6 +1227,7 @@ details.pv-card > summary {
   align-items: center;
   justify-content: center;
   padding: 6px;
+  border-radius: 2px;
 }
 
 /* watchOS & Store Card */
@@ -1043,7 +1252,8 @@ details.pv-card > summary {
 .apple-tv-box {
   width: 80px;
   height: 48px;
-  background: #1e293b;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -1080,6 +1290,7 @@ details.pv-card > summary {
 .store-card-name {
   font-size: 11px;
   font-weight: 600;
+  color: var(--text-main);
 }
 
 .store-card-rating {
@@ -1088,14 +1299,21 @@ details.pv-card > summary {
 }
 
 .store-card-btn {
-  background: #e2e8f0;
+  background: var(--primary-light);
   border-radius: 12px;
   padding: 2px 8px;
   font-size: 10px;
   font-weight: 600;
-  color: #0284c7;
-  border: none;
+  color: var(--primary);
+  border: 1px solid var(--primary);
   margin-top: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.store-card-btn:hover {
+  background: var(--primary);
+  color: #ffffff;
 }
 
 /* 底部全局导出栏 */
@@ -1123,14 +1341,22 @@ details.pv-card > summary {
 
 .exp-group b {
   font-size: 11px;
+  font-weight: 600;
   color: var(--text-muted);
 }
 
 .check.mini {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: 11px;
+  cursor: pointer;
+  color: var(--text-main);
+  user-select: none;
+}
+
+.check.mini input[type="checkbox"] {
+  accent-color: var(--primary);
   cursor: pointer;
 }
 
@@ -1148,7 +1374,7 @@ dialog.modal-dialog {
   border: 1px solid var(--border-color);
   border-radius: 12px;
   background: var(--bg-panel);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
   padding: 20px;
   z-index: 100;
   max-width: 560px;
@@ -1157,7 +1383,7 @@ dialog.modal-dialog {
 }
 
 dialog.modal-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
 }
 
@@ -1165,6 +1391,7 @@ dialog.modal-dialog::backdrop {
   font-size: 16px;
   font-weight: 700;
   margin-bottom: 12px;
+  color: var(--text-main);
 }
 
 .file-tree {
@@ -1223,5 +1450,6 @@ kbd {
   padding: 2px 6px;
   font-family: monospace;
   font-size: 11px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  color: var(--text-main);
 }
