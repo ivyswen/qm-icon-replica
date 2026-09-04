@@ -3,7 +3,9 @@ import { encodeIco } from "./ico";
 
 describe("encodeIco - ICO 格式二进制编码器", () => {
   it("单图像编码应生成合法的 6 字节 ICONDIR + 16 字节 ICONDIRENTRY + PNG 负载", async () => {
-    const fakePng = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x01, 0x02]);
+    const fakePng = new Uint8Array([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x01, 0x02,
+    ]);
     const blob = encodeIco([
       {
         width: 32,
@@ -68,19 +70,31 @@ describe("encodeIco - ICO 格式二进制编码器", () => {
     expect(view.getUint8(entry1Offset)).toBe(32);
     expect(view.getUint8(entry1Offset + 1)).toBe(32);
     expect(view.getUint32(entry1Offset + 8, true)).toBe(5);
-    expect(view.getUint32(entry1Offset + 12, true)).toBe(headerAndEntriesSize + 4);
+    expect(view.getUint32(entry1Offset + 12, true)).toBe(
+      headerAndEntriesSize + 4
+    );
 
     // Entry 2 (256px 应为 0)
     const entry2Offset = 6 + 32;
     expect(view.getUint8(entry2Offset)).toBe(0);
     expect(view.getUint8(entry2Offset + 1)).toBe(0);
     expect(view.getUint32(entry2Offset + 8, true)).toBe(3);
-    expect(view.getUint32(entry2Offset + 12, true)).toBe(headerAndEntriesSize + 4 + 5);
+    expect(view.getUint32(entry2Offset + 12, true)).toBe(
+      headerAndEntriesSize + 4 + 5
+    );
 
     // 验证负载
-    expect(Array.from(bytes.slice(headerAndEntriesSize, headerAndEntriesSize + 4))).toEqual([1, 2, 3, 4]);
-    expect(Array.from(bytes.slice(headerAndEntriesSize + 4, headerAndEntriesSize + 9))).toEqual([5, 6, 7, 8, 9]);
-    expect(Array.from(bytes.slice(headerAndEntriesSize + 9))).toEqual([10, 11, 12]);
+    expect(
+      Array.from(bytes.slice(headerAndEntriesSize, headerAndEntriesSize + 4))
+    ).toEqual([1, 2, 3, 4]);
+    expect(
+      Array.from(
+        bytes.slice(headerAndEntriesSize + 4, headerAndEntriesSize + 9)
+      )
+    ).toEqual([5, 6, 7, 8, 9]);
+    expect(Array.from(bytes.slice(headerAndEntriesSize + 9))).toEqual([
+      10, 11, 12,
+    ]);
   });
 
   it("当传入空数组时抛出错误", () => {

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildZipPlan, PLATFORM_PRESETS, getPlatformConfigFiles, type ExportPlatform } from "./export";
+import {
+  buildZipPlan,
+  PLATFORM_PRESETS,
+  getPlatformConfigFiles,
+  type ExportPlatform,
+} from "./export";
 
 describe("export system - 平台尺寸与 ZIP 规划 (TDD)", () => {
   it("PLATFORM_PRESETS 包含 Android, iOS, Web, macOS, Windows 等全平台预设", () => {
@@ -15,14 +20,14 @@ describe("export system - 平台尺寸与 ZIP 规划 (TDD)", () => {
     const selected: ExportPlatform[] = ["android", "ios", "web", "windows"];
     const plan = buildZipPlan(selected);
     expect(plan.length).toBeGreaterThan(0);
-    expect(plan.some((entry) => entry.platform === "android")).toBe(true);
-    expect(plan.some((entry) => entry.platform === "ios")).toBe(true);
-    expect(plan.some((entry) => entry.platform === "web")).toBe(true);
-    expect(plan.some((entry) => entry.platform === "windows")).toBe(true);
+    expect(plan.some(entry => entry.platform === "android")).toBe(true);
+    expect(plan.some(entry => entry.platform === "ios")).toBe(true);
+    expect(plan.some(entry => entry.platform === "web")).toBe(true);
+    expect(plan.some(entry => entry.platform === "windows")).toBe(true);
 
-    const winEntries = plan.filter((entry) => entry.platform === "windows");
+    const winEntries = plan.filter(entry => entry.platform === "windows");
     expect(winEntries.length).toBe(6);
-    expect(winEntries[0].files.some((f) => f.endsWith(".ico"))).toBe(true);
+    expect(winEntries[0].files.some(f => f.endsWith(".ico"))).toBe(true);
   });
 
   it("getPlatformConfigFiles 正确包含 Windows 多尺寸 icon.ico 与 Web favicon.ico", () => {
@@ -34,4 +39,3 @@ describe("export system - 平台尺寸与 ZIP 规划 (TDD)", () => {
     expect(webConfigs).toContain("Web-PWA/manifest.json");
   });
 });
-

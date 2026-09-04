@@ -5,14 +5,31 @@ import { BUILTIN_ICONS } from "@/features/icons/data/builtinIcons";
 export const HISTORY_STORAGE_KEY = "qm-icon-replica-history-v1";
 export const DRAFT_STORAGE_KEY = "qm-icon-replica-draft-v1";
 
-export type SourceMode = "clipart" | "logo" | "text" | "emoji" | "image" | "svg";
+export type SourceMode =
+  | "clipart"
+  | "logo"
+  | "text"
+  | "emoji"
+  | "image"
+  | "svg";
 
 export type SavedDraftState = ExportDesignState & {
   updatedAt?: number;
 };
 
 export interface MaskOption {
-  id: "squircle" | "round" | "circle" | "none" | "hex" | "star" | "diamond" | "triangle" | "teardrop" | "shield" | "custom";
+  id:
+    | "squircle"
+    | "round"
+    | "circle"
+    | "none"
+    | "hex"
+    | "star"
+    | "diamond"
+    | "triangle"
+    | "teardrop"
+    | "shield"
+    | "custom";
   labelZh: string;
   labelEn: string;
 }
@@ -133,7 +150,8 @@ export function readSavedDraft(): SavedDraftState {
     const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
     if (!raw) return DEFAULT_DESIGN_DRAFT;
     const parsed = JSON.parse(raw);
-    if (typeof parsed !== "object" || parsed === null) return DEFAULT_DESIGN_DRAFT;
+    if (typeof parsed !== "object" || parsed === null)
+      return DEFAULT_DESIGN_DRAFT;
     return { ...DEFAULT_DESIGN_DRAFT, ...parsed };
   } catch {
     return DEFAULT_DESIGN_DRAFT;
@@ -143,7 +161,10 @@ export function readSavedDraft(): SavedDraftState {
 export function saveSavedDraft(draft: SavedDraftState): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ ...draft, updatedAt: Date.now() }));
+    window.localStorage.setItem(
+      DRAFT_STORAGE_KEY,
+      JSON.stringify({ ...draft, updatedAt: Date.now() })
+    );
   } catch {
     // 忽略私有模式或容量受限异常
   }
@@ -168,10 +189,19 @@ export const BASE_SHAPE_OPTIONS: Array<{ id: Shape; label: string }> = [
 
 export const SHAPE_OPTIONS: Array<{ id: Shape; label: string }> = [
   ...BASE_SHAPE_OPTIONS,
-  ...BUILTIN_ICONS.map((i) => ({ id: i.n, label: i.label })),
+  ...BUILTIN_ICONS.map(i => ({ id: i.n, label: i.label })),
 ];
 
-export const RANDOM_COLORS = ["#0f766e", "#2563eb", "#b45309", "#7c3aed", "#334155", "#16a34a", "#e11d48", "#0891b2"];
+export const RANDOM_COLORS = [
+  "#0f766e",
+  "#2563eb",
+  "#b45309",
+  "#7c3aed",
+  "#334155",
+  "#16a34a",
+  "#e11d48",
+  "#0891b2",
+];
 
 export const BACKGROUND_OPTIONS: Array<{ id: Background; label: string }> = [
   { id: "solid", label: "纯色" },
@@ -189,4 +219,3 @@ export const EXPORT_PLATFORM_LABELS = [
   ["macos", "macOS + ICNS"],
   ["windows", "Windows + ICO"],
 ] as const;
-

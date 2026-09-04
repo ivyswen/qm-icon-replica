@@ -18,14 +18,18 @@ export const PRESET_SWATCHES = [
 
 function hexToRgb(hex: string): [number, number, number] {
   let c = (hex || "#ffffff").replace("#", "").trim();
-  if (c.length === 3) c = c.split("").map((x) => x + x).join("");
+  if (c.length === 3)
+    c = c
+      .split("")
+      .map(x => x + x)
+      .join("");
   const num = parseInt(c, 16);
   if (isNaN(num)) return [255, 255, 255];
   return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
 }
 
 function getLuminance(r: number, g: number, b: number): number {
-  const [rs, gs, bs] = [r, g, b].map((val) => {
+  const [rs, gs, bs] = [r, g, b].map(val => {
     const s = val / 255;
     return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
   });

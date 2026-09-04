@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { createEmojiSvg, createImageSvg, parseRawSvgInput, HOT_EMOJIS, EMOJI_CATEGORIES } from "./emoji";
+import {
+  createEmojiSvg,
+  createImageSvg,
+  parseRawSvgInput,
+  HOT_EMOJIS,
+  EMOJI_CATEGORIES,
+} from "./emoji";
 
 describe("Emoji 与扩展素材工具套件", () => {
   it("EMOJI_CATEGORIES 应该包含 8 大分类且每类至少 30 个 Emoji", () => {
     expect(EMOJI_CATEGORIES.length).toBe(8);
-    const categoryIds = EMOJI_CATEGORIES.map((c) => c.id);
+    const categoryIds = EMOJI_CATEGORIES.map(c => c.id);
     expect(categoryIds).toEqual([
       "popular",
       "smileys",
@@ -35,9 +41,13 @@ describe("Emoji 与扩展素材工具套件", () => {
   });
 
   it("createImageSvg 应该生成包含 image 标签的嵌入式 SVG", () => {
-    const svg = createImageSvg("data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==");
+    const svg = createImageSvg(
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg=="
+    );
     expect(svg).toContain("<image");
-    expect(svg).toContain("href=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==\"");
+    expect(svg).toContain(
+      'href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUg=="'
+    );
   });
 
   it("parseRawSvgInput 能够正确解析完整 SVG 与单个路径 d", () => {

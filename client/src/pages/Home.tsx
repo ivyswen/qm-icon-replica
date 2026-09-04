@@ -53,6 +53,9 @@ import {
   getBuiltinIcons,
   getDefaultStarterIcons,
   searchIconify,
+  getCachedIcon,
+  batchFetchIconData,
+  IconThumb,
   HOT_EMOJIS,
   EMOJI_CATEGORIES,
   BUILTIN_ICONS,
@@ -72,8 +75,15 @@ import {
   DEFAULT_DESIGN_DRAFT,
   type SourceMode,
 } from "@/features/editor/data/defaults";
-import { DESIGN_TEMPLATES, type DesignTemplateKey } from "@/features/editor/data/templates";
-import { ControlGroup, Segmented, SliderField } from "@/features/editor/components/EditorPrimitives";
+import {
+  DESIGN_TEMPLATES,
+  type DesignTemplateKey,
+} from "@/features/editor/data/templates";
+import {
+  ControlGroup,
+  Segmented,
+  SliderField,
+} from "@/features/editor/components/EditorPrimitives";
 import AppMark from "@/features/editor/components/AppMark";
 import PlatformPreview, {
   AndroidShapeGrid,
@@ -84,12 +94,19 @@ import PlatformPreview, {
   WatchAppleTvPreview,
 } from "@/features/editor/components/PlatformPreview";
 import TopBar from "@/features/editor/components/TopBar";
-import type { Background, PreviewPlatform as Platform, SavedSnapshot, Shape } from "@/features/editor/model";
+import type {
+  Background,
+  PreviewPlatform as Platform,
+  SavedSnapshot,
+  Shape,
+} from "@/features/editor/model";
 
 function readSavedHistory(): SavedSnapshot[] {
   if (typeof window === "undefined") return [];
   try {
-    const parsed = JSON.parse(window.localStorage.getItem(HISTORY_STORAGE_KEY) || "[]");
+    const parsed = JSON.parse(
+      window.localStorage.getItem(HISTORY_STORAGE_KEY) || "[]"
+    );
     return Array.isArray(parsed) ? parsed.slice(0, 30) : [];
   } catch {
     return [];
@@ -111,38 +128,58 @@ export default function Home() {
   const [zipProgress, setZipProgress] = useState(0);
 
   // 画布预览环境（浅色 / 深色 / 棋盘格）
-  const [canvasBg, setCanvasBg] = useState<"light" | "dark" | "checker">("light");
+  const [canvasBg, setCanvasBg] = useState<"light" | "dark" | "checker">(
+    "light"
+  );
 
   // 素材来源与排版
   const [shape, setShape] = useState<Shape>(initialDraft.shape);
   const [iconId, setIconId] = useState<string | undefined>(initialDraft.iconId);
-  const [iconSvg, setIconSvg] = useState<string | undefined>(initialDraft.iconSvg);
-  const [sourceMode, setSourceMode] = useState<SourceMode>(initialDraft.sourceMode || "clipart");
+  const [iconSvg, setIconSvg] = useState<string | undefined>(
+    initialDraft.iconSvg
+  );
+  const [sourceMode, setSourceMode] = useState<SourceMode>(
+    initialDraft.sourceMode || "clipart"
+  );
   const [sourceMoreOpen, setSourceMoreOpen] = useState(false);
   const [customText, setCustomText] = useState(initialDraft.customText || "A");
-  const [fontFamily, setFontFamily] = useState(initialDraft.fontFamily || "Inter, sans-serif");
+  const [fontFamily, setFontFamily] = useState(
+    initialDraft.fontFamily || "Inter, sans-serif"
+  );
   const [fontWeight, setFontWeight] = useState(initialDraft.fontWeight || 800);
-  const [textTransform, setTextTransform] = useState<"none" | "arc-up" | "arc-down">(initialDraft.textTransform || "none");
+  const [textTransform, setTextTransform] = useState<
+    "none" | "arc-up" | "arc-down"
+  >(initialDraft.textTransform || "none");
   const [textArc, setTextArc] = useState(initialDraft.textArc || 30);
   const [emojiChar, setEmojiChar] = useState(initialDraft.emojiChar || "🚀");
   const [emojiCategory, setEmojiCategory] = useState<string>("popular");
   const [emojiSearch, setEmojiSearch] = useState<string>("");
-  const [customSvgCode, setCustomSvgCode] = useState(initialDraft.customSvgCode || "");
-  const [customImageDataUrl, setCustomImageDataUrl] = useState(initialDraft.customImageDataUrl || "");
-  const [imageMonochrome, setImageMonochrome] = useState(initialDraft.imageMonochrome || false);
+  const [customSvgCode, setCustomSvgCode] = useState(
+    initialDraft.customSvgCode || ""
+  );
+  const [customImageDataUrl, setCustomImageDataUrl] = useState(
+    initialDraft.customImageDataUrl || ""
+  );
+  const [imageMonochrome, setImageMonochrome] = useState(
+    initialDraft.imageMonochrome || false
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const jsonImportInputRef = useRef<HTMLInputElement>(null);
 
   // 搜索
   const [search, setSearch] = useState("");
   const [brandSearch, setBrandSearch] = useState("");
-  const [iconResults, setIconResults] = useState<IconSearchItem[]>(() => getDefaultStarterIcons());
+  const [iconResults, setIconResults] = useState<IconSearchItem[]>(() =>
+    getDefaultStarterIcons()
+  );
   const [iconSearching, setIconSearching] = useState(false);
   const [iconSearchError, setIconSearchError] = useState("");
 
   // 前景颜色与渐变
   const [fg, setFg] = useState(initialDraft.fg);
-  const [fgType, setFgType] = useState<"solid" | "gradient">(initialDraft.fgType || "solid");
+  const [fgType, setFgType] = useState<"solid" | "gradient">(
+    initialDraft.fgType || "solid"
+  );
   const [fgColor2, setFgColor2] = useState(initialDraft.fgColor2 || "#3b82f6");
   const [fgAngle, setFgAngle] = useState(initialDraft.fgAngle ?? 90);
 
@@ -153,50 +190,92 @@ export default function Home() {
   const [rotation, setRotation] = useState(initialDraft.rotation ?? 0);
 
   // 背景设计
-  const [background, setBackground] = useState<Background>(initialDraft.background || "linear");
+  const [background, setBackground] = useState<Background>(
+    initialDraft.background || "linear"
+  );
   const [bgColor1, setBgColor1] = useState(initialDraft.bgColor1 || "#2dd4bf");
   const [color2, setColor2] = useState(initialDraft.color2 || "#eab308");
   const [bgAngle, setBgAngle] = useState(initialDraft.bgAngle ?? 135);
-  const [pattern, setPattern] = useState<ExportDesignState["pattern"]>(initialDraft.pattern || "none");
-  const [patternOpacity, setPatternOpacity] = useState(initialDraft.patternOpacity ?? 20);
-  const [patternSize, setPatternSize] = useState(initialDraft.patternSize ?? 14);
+  const [pattern, setPattern] = useState<ExportDesignState["pattern"]>(
+    initialDraft.pattern || "none"
+  );
+  const [patternOpacity, setPatternOpacity] = useState(
+    initialDraft.patternOpacity ?? 20
+  );
+  const [patternSize, setPatternSize] = useState(
+    initialDraft.patternSize ?? 14
+  );
   const [noise, setNoise] = useState<number>(initialDraft.noise ?? 0);
 
   // 高级 - 形状蒙版
-  const [mask, setMask] = useState<ExportDesignState["mask"]>(initialDraft.mask || "squircle");
+  const [mask, setMask] = useState<ExportDesignState["mask"]>(
+    initialDraft.mask || "squircle"
+  );
   const [maskRadius, setMaskRadius] = useState(initialDraft.maskRadius ?? 22);
   const [maskPad, setMaskPad] = useState(initialDraft.maskPad ?? 0);
-  const [customMask, setCustomMask] = useState(initialDraft.customMask || "M50 0 L100 100 L0 100 Z");
+  const [customMask, setCustomMask] = useState(
+    initialDraft.customMask || "M50 0 L100 100 L0 100 Z"
+  );
 
   // 高级 - 图层特效
-  const [layersVisible, setLayersVisible] = useState<{ fg: boolean; bg: boolean; badge: boolean }>(
-    initialDraft.layersVisible || { fg: true, bg: true, badge: true }
-  );
+  const [layersVisible, setLayersVisible] = useState<{
+    fg: boolean;
+    bg: boolean;
+    badge: boolean;
+  }>(initialDraft.layersVisible || { fg: true, bg: true, badge: true });
   const [shadow, setShadow] = useState(initialDraft.shadow ?? true);
-  const [shadowPreset, setShadowPreset] = useState<"none" | "soft" | "hard" | "long">(initialDraft.shadowPreset || "soft");
-  const [shadowOffsetX, setShadowOffsetX] = useState(initialDraft.shadowOffsetX ?? 0);
-  const [shadowOffsetY, setShadowOffsetY] = useState(initialDraft.shadowOffsetY ?? 4);
+  const [shadowPreset, setShadowPreset] = useState<
+    "none" | "soft" | "hard" | "long"
+  >(initialDraft.shadowPreset || "soft");
+  const [shadowOffsetX, setShadowOffsetX] = useState(
+    initialDraft.shadowOffsetX ?? 0
+  );
+  const [shadowOffsetY, setShadowOffsetY] = useState(
+    initialDraft.shadowOffsetY ?? 4
+  );
   const [shadowBlur, setShadowBlur] = useState(initialDraft.shadowBlur ?? 10);
-  const [shadowAlpha, setShadowAlpha] = useState(initialDraft.shadowAlpha ?? 30);
-  const [shadowColor, setShadowColor] = useState(initialDraft.shadowColor || "#000000");
-  const [strokeEnabled, setStrokeEnabled] = useState(initialDraft.strokeEnabled ?? false);
+  const [shadowAlpha, setShadowAlpha] = useState(
+    initialDraft.shadowAlpha ?? 30
+  );
+  const [shadowColor, setShadowColor] = useState(
+    initialDraft.shadowColor || "#000000"
+  );
+  const [strokeEnabled, setStrokeEnabled] = useState(
+    initialDraft.strokeEnabled ?? false
+  );
   const [strokeWidth, setStrokeWidth] = useState(initialDraft.strokeWidth ?? 2);
-  const [strokeColor, setStrokeColor] = useState(initialDraft.strokeColor || "#ffffff");
-  const [glowEnabled, setGlowEnabled] = useState(initialDraft.glowEnabled ?? false);
+  const [strokeColor, setStrokeColor] = useState(
+    initialDraft.strokeColor || "#ffffff"
+  );
+  const [glowEnabled, setGlowEnabled] = useState(
+    initialDraft.glowEnabled ?? false
+  );
   const [glowBlur, setGlowBlur] = useState(initialDraft.glowBlur ?? 8);
-  const [glowColor, setGlowColor] = useState(initialDraft.glowColor || "#0f766e");
-  const [gloss, setGloss] = useState<"none" | "top" | "bevel">(initialDraft.gloss || "none");
-  const [innerBorder, setInnerBorder] = useState(initialDraft.innerBorder ?? false);
+  const [glowColor, setGlowColor] = useState(
+    initialDraft.glowColor || "#0f766e"
+  );
+  const [gloss, setGloss] = useState<"none" | "top" | "bevel">(
+    initialDraft.gloss || "none"
+  );
+  const [innerBorder, setInnerBorder] = useState(
+    initialDraft.innerBorder ?? false
+  );
 
   // 高级 - 徽章 / 角标
-  const [badgeEnabled, setBadgeEnabled] = useState(initialDraft.badgeEnabled ?? false);
-  const [badgeStyle, setBadgeStyle] = useState<"corner" | "bottom" | "dot">(initialDraft.badgeStyle || "corner");
+  const [badgeEnabled, setBadgeEnabled] = useState(
+    initialDraft.badgeEnabled ?? false
+  );
+  const [badgeStyle, setBadgeStyle] = useState<"corner" | "bottom" | "dot">(
+    initialDraft.badgeStyle || "corner"
+  );
   const [badgeText, setBadgeText] = useState(initialDraft.badgeText || "NEW");
   const [badgeBg, setBadgeBg] = useState(initialDraft.badgeBg || "#ef4444");
-  const [badgeColor, setBadgeColor] = useState(initialDraft.badgeColor || "#ffffff");
-  const [badgePosition, setBadgePosition] = useState<ExportDesignState["badgePosition"]>(
-    initialDraft.badgePosition || "top-right"
+  const [badgeColor, setBadgeColor] = useState(
+    initialDraft.badgeColor || "#ffffff"
   );
+  const [badgePosition, setBadgePosition] = useState<
+    ExportDesignState["badgePosition"]
+  >(initialDraft.badgePosition || "top-right");
   const [badgeSize, setBadgeSize] = useState(initialDraft.badgeSize ?? 30);
 
   // 应用名称与导出
@@ -219,10 +298,14 @@ export default function Home() {
   const [mobileRight, setMobileRight] = useState(false);
   const [undoStack, setUndoStack] = useState<string[]>([]);
   const [redoStack, setRedoStack] = useState<string[]>([]);
-  const [savedHistory, setSavedHistory] = useState<SavedSnapshot[]>(readSavedHistory);
+  const [savedHistory, setSavedHistory] =
+    useState<SavedSnapshot[]>(readSavedHistory);
 
   // 对比度计算
-  const contrastRatio = useMemo(() => calculateContrastRatio(fg, bgColor1 || "#f8fafc"), [fg, bgColor1]);
+  const contrastRatio = useMemo(
+    () => calculateContrastRatio(fg, bgColor1 || "#f8fafc"),
+    [fg, bgColor1]
+  );
 
   // 获取当前状态
   const getCurrentState = (): ExportDesignState => ({
@@ -288,15 +371,18 @@ export default function Home() {
 
   // 保存快照至历史
   const saveState = () => {
-    setUndoStack((states) => [...states.slice(-19), JSON.stringify(getCurrentState())]);
+    setUndoStack(states => [
+      ...states.slice(-19),
+      JSON.stringify(getCurrentState()),
+    ]);
     setRedoStack([]);
   };
 
   const undo = () => {
     if (undoStack.length === 0) return;
     const last = undoStack[undoStack.length - 1];
-    setUndoStack((states) => states.slice(0, -1));
-    setRedoStack((states) => [...states, JSON.stringify(getCurrentState())]);
+    setUndoStack(states => states.slice(0, -1));
+    setRedoStack(states => [...states, JSON.stringify(getCurrentState())]);
     restoreSnapshot(JSON.parse(last), false);
     toast.success(lang === "ZH" ? "已撤销" : "Undo");
   };
@@ -304,13 +390,16 @@ export default function Home() {
   const redo = () => {
     if (redoStack.length === 0) return;
     const next = redoStack[redoStack.length - 1];
-    setRedoStack((states) => states.slice(0, -1));
-    setUndoStack((states) => [...states, JSON.stringify(getCurrentState())]);
+    setRedoStack(states => states.slice(0, -1));
+    setUndoStack(states => [...states, JSON.stringify(getCurrentState())]);
     restoreSnapshot(JSON.parse(next), false);
     toast.success(lang === "ZH" ? "已重做" : "Redo");
   };
 
-  const restoreSnapshot = (snapshot: Partial<ExportDesignState>, showMsg = true) => {
+  const restoreSnapshot = (
+    snapshot: Partial<ExportDesignState>,
+    showMsg = true
+  ) => {
     if (snapshot.shape !== undefined) setShape(snapshot.shape);
     setIconId(snapshot.iconId);
     setIconSvg(snapshot.iconSvg);
@@ -321,9 +410,12 @@ export default function Home() {
     if (snapshot.textTransform) setTextTransform(snapshot.textTransform);
     if (snapshot.textArc !== undefined) setTextArc(snapshot.textArc);
     if (snapshot.emojiChar) setEmojiChar(snapshot.emojiChar);
-    if (snapshot.customSvgCode !== undefined) setCustomSvgCode(snapshot.customSvgCode);
-    if (snapshot.customImageDataUrl !== undefined) setCustomImageDataUrl(snapshot.customImageDataUrl);
-    if (snapshot.imageMonochrome !== undefined) setImageMonochrome(snapshot.imageMonochrome);
+    if (snapshot.customSvgCode !== undefined)
+      setCustomSvgCode(snapshot.customSvgCode);
+    if (snapshot.customImageDataUrl !== undefined)
+      setCustomImageDataUrl(snapshot.customImageDataUrl);
+    if (snapshot.imageMonochrome !== undefined)
+      setImageMonochrome(snapshot.imageMonochrome);
     if (snapshot.fg) setFg(snapshot.fg);
     if (snapshot.fgType) setFgType(snapshot.fgType);
     if (snapshot.fgColor2) setFgColor2(snapshot.fgColor2);
@@ -333,8 +425,10 @@ export default function Home() {
     if (snapshot.color2) setColor2(snapshot.color2);
     if (snapshot.bgAngle !== undefined) setBgAngle(snapshot.bgAngle);
     if (snapshot.pattern !== undefined) setPattern(snapshot.pattern);
-    if (snapshot.patternOpacity !== undefined) setPatternOpacity(snapshot.patternOpacity);
-    if (snapshot.patternSize !== undefined) setPatternSize(snapshot.patternSize);
+    if (snapshot.patternOpacity !== undefined)
+      setPatternOpacity(snapshot.patternOpacity);
+    if (snapshot.patternSize !== undefined)
+      setPatternSize(snapshot.patternSize);
     if (snapshot.noise !== undefined) setNoise(snapshot.noise);
     if (snapshot.rotation !== undefined) setRotation(snapshot.rotation);
     if (snapshot.scale !== undefined) setScale(snapshot.scale);
@@ -346,23 +440,31 @@ export default function Home() {
     if (snapshot.maskRadius !== undefined) setMaskRadius(snapshot.maskRadius);
     if (snapshot.maskPad !== undefined) setMaskPad(snapshot.maskPad);
     if (snapshot.customMask) setCustomMask(snapshot.customMask);
-    if (snapshot.strokeEnabled !== undefined) setStrokeEnabled(snapshot.strokeEnabled);
-    if (snapshot.strokeWidth !== undefined) setStrokeWidth(snapshot.strokeWidth);
+    if (snapshot.strokeEnabled !== undefined)
+      setStrokeEnabled(snapshot.strokeEnabled);
+    if (snapshot.strokeWidth !== undefined)
+      setStrokeWidth(snapshot.strokeWidth);
     if (snapshot.strokeColor) setStrokeColor(snapshot.strokeColor);
-    if (snapshot.glowEnabled !== undefined) setGlowEnabled(snapshot.glowEnabled);
+    if (snapshot.glowEnabled !== undefined)
+      setGlowEnabled(snapshot.glowEnabled);
     if (snapshot.glowBlur !== undefined) setGlowBlur(snapshot.glowBlur);
     if (snapshot.glowColor) setGlowColor(snapshot.glowColor);
     if (snapshot.shadow !== undefined) setShadow(snapshot.shadow);
     if (snapshot.shadowPreset) setShadowPreset(snapshot.shadowPreset);
-    if (snapshot.shadowOffsetX !== undefined) setShadowOffsetX(snapshot.shadowOffsetX);
-    if (snapshot.shadowOffsetY !== undefined) setShadowOffsetY(snapshot.shadowOffsetY);
+    if (snapshot.shadowOffsetX !== undefined)
+      setShadowOffsetX(snapshot.shadowOffsetX);
+    if (snapshot.shadowOffsetY !== undefined)
+      setShadowOffsetY(snapshot.shadowOffsetY);
     if (snapshot.shadowBlur !== undefined) setShadowBlur(snapshot.shadowBlur);
-    if (snapshot.shadowAlpha !== undefined) setShadowAlpha(snapshot.shadowAlpha);
+    if (snapshot.shadowAlpha !== undefined)
+      setShadowAlpha(snapshot.shadowAlpha);
     if (snapshot.shadowColor) setShadowColor(snapshot.shadowColor);
     if (snapshot.gloss) setGloss(snapshot.gloss);
-    if (snapshot.innerBorder !== undefined) setInnerBorder(snapshot.innerBorder);
+    if (snapshot.innerBorder !== undefined)
+      setInnerBorder(snapshot.innerBorder);
     if (snapshot.layersVisible) setLayersVisible(snapshot.layersVisible);
-    if (snapshot.badgeEnabled !== undefined) setBadgeEnabled(snapshot.badgeEnabled);
+    if (snapshot.badgeEnabled !== undefined)
+      setBadgeEnabled(snapshot.badgeEnabled);
     if (snapshot.badgeStyle) setBadgeStyle(snapshot.badgeStyle);
     if (snapshot.badgeText) setBadgeText(snapshot.badgeText);
     if (snapshot.badgeBg) setBadgeBg(snapshot.badgeBg);
@@ -379,7 +481,9 @@ export default function Home() {
     saveState();
     clearSavedDraft();
     restoreSnapshot(DEFAULT_DESIGN_DRAFT, false);
-    toast.success(lang === "ZH" ? "已重置为默认设计" : "Reset to default design");
+    toast.success(
+      lang === "ZH" ? "已重置为默认设计" : "Reset to default design"
+    );
   };
 
   const saveToHistory = () => {
@@ -388,14 +492,15 @@ export default function Home() {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       savedAt: Date.now(),
     };
-    setSavedHistory((items) => [snapshot, ...items].slice(0, 30));
+    setSavedHistory(items => [snapshot, ...items].slice(0, 30));
     toast.success(lang === "ZH" ? "已存入历史记录" : "Saved to history");
   };
 
   const randomize = () => {
     saveState();
     const colors = RANDOM_COLORS;
-    const nextIcon = BUILTIN_ICONS[Math.floor(Math.random() * BUILTIN_ICONS.length)];
+    const nextIcon =
+      BUILTIN_ICONS[Math.floor(Math.random() * BUILTIN_ICONS.length)];
     const nextFg = colors[Math.floor(Math.random() * colors.length)];
     const nextColor2 = colors[(colors.indexOf(nextFg) + 2) % colors.length];
     const nextBg1 = colors[(colors.indexOf(nextFg) + 4) % colors.length];
@@ -406,7 +511,11 @@ export default function Home() {
     setBgColor1(nextBg1);
     setColor2(nextColor2);
     setBgAngle(Math.floor(Math.random() * 360));
-    toast.success(lang === "ZH" ? `已随机生成：${nextIcon.label}` : `Randomized: ${nextIcon.n}`);
+    toast.success(
+      lang === "ZH"
+        ? `已随机生成：${nextIcon.label}`
+        : `Randomized: ${nextIcon.n}`
+    );
   };
 
   const swapBgColors = () => {
@@ -420,10 +529,13 @@ export default function Home() {
   const randomPalette = () => {
     saveState();
     const c1 = RANDOM_COLORS[Math.floor(Math.random() * RANDOM_COLORS.length)];
-    const c2 = RANDOM_COLORS[(RANDOM_COLORS.indexOf(c1) + 3) % RANDOM_COLORS.length];
+    const c2 =
+      RANDOM_COLORS[(RANDOM_COLORS.indexOf(c1) + 3) % RANDOM_COLORS.length];
     setBgColor1(c1);
     setColor2(c2);
-    toast.success(lang === "ZH" ? "已生成随机配色" : "Generated random palette");
+    toast.success(
+      lang === "ZH" ? "已生成随机配色" : "Generated random palette"
+    );
   };
 
   const applyTemplate = (key: DesignTemplateKey) => {
@@ -445,16 +557,27 @@ export default function Home() {
     if (preset.glowEnabled !== undefined) setGlowEnabled(preset.glowEnabled);
     if (preset.glowBlur !== undefined) setGlowBlur(preset.glowBlur);
     if (preset.glowColor) setGlowColor(preset.glowColor);
-    if (preset.strokeEnabled !== undefined) setStrokeEnabled(preset.strokeEnabled);
+    if (preset.strokeEnabled !== undefined)
+      setStrokeEnabled(preset.strokeEnabled);
     if (preset.strokeWidth !== undefined) setStrokeWidth(preset.strokeWidth);
     if (preset.strokeColor) setStrokeColor(preset.strokeColor);
-    toast.success(lang === "ZH" ? `已应用「${key}」设计风格（保留当前图标）` : `Applied style: ${key} (icon preserved)`);
+    toast.success(
+      lang === "ZH"
+        ? `已应用「${key}」设计风格（保留当前图标）`
+        : `Applied style: ${key} (icon preserved)`
+    );
   };
 
   const download = () => {
     void exportFormat(getCurrentState(), format)
-      .then(() => toast.success(lang === "ZH" ? `${format} 已下载` : `${format} downloaded`))
-      .catch(() => toast.error(lang === "ZH" ? "导出失败，请重试" : "Export failed"));
+      .then(() =>
+        toast.success(
+          lang === "ZH" ? `${format} 已下载` : `${format} downloaded`
+        )
+      )
+      .catch(() =>
+        toast.error(lang === "ZH" ? "导出失败，请重试" : "Export failed")
+      );
   };
 
   const downloadZip = () => {
@@ -464,16 +587,21 @@ export default function Home() {
       .then(({ platformCount, fileCount }) => {
         setZipProgress(100);
         setTimeout(() => setZipProgress(0), 1000);
-        toast.success(lang === "ZH" ? "ZIP 图标包已下载" : "ZIP Package Downloaded", {
-          description:
-            lang === "ZH"
-              ? `${platformCount} 个平台 · ${fileCount} 个文件，已按平台目录整理`
-              : `${platformCount} platforms · ${fileCount} files`,
-        });
+        toast.success(
+          lang === "ZH" ? "ZIP 图标包已下载" : "ZIP Package Downloaded",
+          {
+            description:
+              lang === "ZH"
+                ? `${platformCount} 个平台 · ${fileCount} 个文件，已按平台目录整理`
+                : `${platformCount} platforms · ${fileCount} files`,
+          }
+        );
       })
       .catch(() => {
         setZipProgress(0);
-        toast.error(lang === "ZH" ? "ZIP 导出失败，请重试" : "ZIP export failed");
+        toast.error(
+          lang === "ZH" ? "ZIP 导出失败，请重试" : "ZIP export failed"
+        );
       });
   };
 
@@ -491,7 +619,9 @@ export default function Home() {
   // 全局快捷键监听
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const isInput = ["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement)?.tagName || "");
+      const isInput = ["INPUT", "TEXTAREA", "SELECT"].includes(
+        (e.target as HTMLElement)?.tagName || ""
+      );
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
@@ -527,12 +657,21 @@ export default function Home() {
           randomize();
         } else if (e.key.toLowerCase() === "d") {
           e.preventDefault();
-          setCanvasBg((cur) => (cur === "light" ? "dark" : cur === "dark" ? "checker" : "light"));
+          setCanvasBg(cur =>
+            cur === "light" ? "dark" : cur === "dark" ? "checker" : "light"
+          );
         } else if (e.key === "?") {
           e.preventDefault();
           setHelpOpen(true);
         } else if (["1", "2", "3", "4", "5", "6"].includes(e.key)) {
-          const bgMap: Background[] = ["solid", "linear", "radial", "conic", "image", "transparent"];
+          const bgMap: Background[] = [
+            "solid",
+            "linear",
+            "radial",
+            "conic",
+            "image",
+            "transparent",
+          ];
           const selected = bgMap[parseInt(e.key, 10) - 1];
           if (selected) {
             saveState();
@@ -568,12 +707,26 @@ export default function Home() {
       try {
         const results = await searchIconify(trimmed, 72);
         setIconResults(results.length > 0 ? results : localHits);
+        if (results.length > 0) {
+          const onlineIds = results.filter(i => !i.isBuiltin).map(i => i.id);
+          if (onlineIds.length > 0) {
+            batchFetchIconData(onlineIds).catch(() => {});
+          }
+        }
         if (results.length === 0 && localHits.length === 0) {
-          setIconSearchError(lang === "ZH" ? "未找到匹配图标，建议尝试相近关键词" : "No icons found");
+          setIconSearchError(
+            lang === "ZH"
+              ? "未找到匹配图标，建议尝试相近关键词"
+              : "No icons found"
+          );
         }
       } catch {
         if (localHits.length === 0) {
-          setIconSearchError(lang === "ZH" ? "在线搜索不可用，已展示内置图标库" : "Online search unavailable, showing built-in icons");
+          setIconSearchError(
+            lang === "ZH"
+              ? "在线搜索不可用，已展示内置图标库"
+              : "Online search unavailable, showing built-in icons"
+          );
           setIconResults(getBuiltinIcons());
         }
       } finally {
@@ -591,7 +744,24 @@ export default function Home() {
       setShape(item.id);
       setIconId(undefined);
       setIconSvg(undefined);
-      toast.success(lang === "ZH" ? `已应用内置图标：${item.label || item.name}` : `Applied icon: ${item.name}`);
+      toast.success(
+        lang === "ZH"
+          ? `已应用内置图标：${item.label || item.name}`
+          : `Applied icon: ${item.name}`
+      );
+      return;
+    }
+
+    // 优先从缓存立即载入，消除网络等待
+    const cached = getCachedIcon(item.id);
+    if (cached && cached.body) {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${cached.viewBox}">${cached.body}</svg>`;
+      setIconId(item.id);
+      setIconSvg(svg);
+      setShape(item.id);
+      toast.success(
+        lang === "ZH" ? `已载入 ${item.name}` : `Loaded ${item.name}`
+      );
       return;
     }
 
@@ -602,10 +772,18 @@ export default function Home() {
       setIconId(item.id);
       setIconSvg(detail.svg);
       setShape(item.id);
-      toast.success(lang === "ZH" ? `已载入 ${item.name}` : `Loaded ${item.name}`);
+      toast.success(
+        lang === "ZH" ? `已载入 ${item.name}` : `Loaded ${item.name}`
+      );
     } catch {
-      setIconSearchError(lang === "ZH" ? "图标加载失败，请重试" : "Failed to load icon");
-      toast.error(lang === "ZH" ? "图标加载失败，请检查网络" : "Icon load failed, check network");
+      setIconSearchError(
+        lang === "ZH" ? "图标加载失败，请重试" : "Failed to load icon"
+      );
+      toast.error(
+        lang === "ZH"
+          ? "图标加载失败，请检查网络"
+          : "Icon load failed, check network"
+      );
     } finally {
       setIconSearching(false);
     }
@@ -642,14 +820,18 @@ export default function Home() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = event => {
       try {
         const parsed = JSON.parse(event.target?.result as string);
         saveState();
         restoreSnapshot(parsed);
-        toast.success(lang === "ZH" ? "已导入并应用配置 JSON" : "Imported config JSON");
+        toast.success(
+          lang === "ZH" ? "已导入并应用配置 JSON" : "Imported config JSON"
+        );
       } catch {
-        toast.error(lang === "ZH" ? "JSON 格式有误，导入失败" : "Invalid JSON file");
+        toast.error(
+          lang === "ZH" ? "JSON 格式有误，导入失败" : "Invalid JSON file"
+        );
       }
     };
     reader.readAsText(file);
@@ -658,20 +840,23 @@ export default function Home() {
 
   // 过滤后的 Emoji
   const filteredEmojis = useMemo(() => {
-    const cat = EMOJI_CATEGORIES.find((c) => c.id === emojiCategory);
-    const list = cat ? cat.emojis : (EMOJI_CATEGORIES[0]?.emojis || []);
+    const cat = EMOJI_CATEGORIES.find(c => c.id === emojiCategory);
+    const list = cat ? cat.emojis : EMOJI_CATEGORIES[0]?.emojis || [];
     if (emojiSearch.trim()) {
-      return list.filter((char) => char.includes(emojiSearch.trim()));
+      return list.filter(char => char.includes(emojiSearch.trim()));
     }
     return list;
   }, [emojiCategory, emojiSearch]);
 
   const currentState = getCurrentState();
-  const filePlan = useMemo(() => buildZipPlan(selectedPlatforms), [selectedPlatforms]);
+  const filePlan = useMemo(
+    () => buildZipPlan(selectedPlatforms),
+    [selectedPlatforms]
+  );
   const allFilesList = useMemo(() => {
     const list: string[] = [];
-    filePlan.forEach((p) => {
-      p.files.forEach((f) => list.push(f));
+    filePlan.forEach(p => {
+      p.files.forEach(f => list.push(f));
     });
     return list;
   }, [filePlan]);
@@ -684,7 +869,7 @@ export default function Home() {
         onHistory={() => setHistoryOpen(true)}
         onRandom={randomize}
         onShare={handleShare}
-        onLanguage={() => setLang((l) => (l === "ZH" ? "EN" : "ZH"))}
+        onLanguage={() => setLang(l => (l === "ZH" ? "EN" : "ZH"))}
         onHelp={() => setHelpOpen(true)}
         onDownload={download}
         onTheme={() => toggleTheme?.()}
@@ -726,7 +911,15 @@ export default function Home() {
                       onClick={() => setSourceMoreOpen(!sourceMoreOpen)}
                       title="选择更多图标类型"
                     >
-                      {sourceMode === "emoji" ? "Emoji" : sourceMode === "image" ? "图片" : sourceMode === "logo" ? "Logo" : sourceMode === "svg" ? "SVG" : "..."}
+                      {sourceMode === "emoji"
+                        ? "Emoji"
+                        : sourceMode === "image"
+                          ? "图片"
+                          : sourceMode === "logo"
+                            ? "Logo"
+                            : sourceMode === "svg"
+                              ? "SVG"
+                              : "..."}
                     </button>
                     {sourceMoreOpen && (
                       <div className="source-menu">
@@ -780,23 +973,31 @@ export default function Home() {
                     className="input"
                     placeholder="搜索 2w+ 图标或符号（支持中文）…"
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={e => setSearch(e.target.value)}
                   />
                   <div className="clip-grid">
-                    {iconResults.map((item) => (
+                    {iconResults.map(item => (
                       <button
                         key={item.id}
-                        className={shape === item.id || iconId === item.id ? "active" : ""}
+                        className={
+                          shape === item.id || iconId === item.id
+                            ? "active"
+                            : ""
+                        }
                         onClick={() => selectIcon(item)}
-                        title={item.name}
+                        title={
+                          item.label
+                            ? `${item.name} (${item.label})`
+                            : item.name
+                        }
                       >
-                        <svg viewBox="0 0 24 24" width="20" height="20">
-                          <path d={item.d || BUILTIN_ICONS.find((i) => i.n === item.id)?.d || "M12 2L2 22h20L12 2z"} fill="currentColor" />
-                        </svg>
+                        <IconThumb item={item} size={20} />
                       </button>
                     ))}
                   </div>
-                  {iconSearchError && <div className="net-hint">{iconSearchError}</div>}
+                  {iconSearchError && (
+                    <div className="net-hint">{iconSearchError}</div>
+                  )}
                 </div>
               )}
 
@@ -812,7 +1013,7 @@ export default function Home() {
                       className="input"
                       rows={2}
                       value={customText}
-                      onChange={(e) => {
+                      onChange={e => {
                         saveState();
                         setCustomText(e.target.value);
                       }}
@@ -823,12 +1024,12 @@ export default function Home() {
                     <select
                       className="input"
                       value={fontFamily}
-                      onChange={(e) => {
+                      onChange={e => {
                         saveState();
                         setFontFamily(e.target.value);
                       }}
                     >
-                      {FONTS_LIST.map((f) => (
+                      {FONTS_LIST.map(f => (
                         <option key={f.id} value={f.id}>
                           {f.name}
                         </option>
@@ -838,7 +1039,7 @@ export default function Home() {
                   <div className="field">
                     <label>字重</label>
                     <div className="seg small">
-                      {[400, 500, 700, 800, 900].map((w) => (
+                      {[400, 500, 700, 800, 900].map(w => (
                         <button
                           key={w}
                           className={fontWeight === w ? "active" : ""}
@@ -855,7 +1056,7 @@ export default function Home() {
                   <div className="field">
                     <label>文字变形</label>
                     <div className="seg small">
-                      {(["none", "arc-up", "arc-down"] as const).map((t) => (
+                      {(["none", "arc-up", "arc-down"] as const).map(t => (
                         <button
                           key={t}
                           className={textTransform === t ? "active" : ""}
@@ -864,7 +1065,11 @@ export default function Home() {
                             setTextTransform(t);
                           }}
                         >
-                          {t === "none" ? "无" : t === "arc-up" ? "上弧" : "下弧"}
+                          {t === "none"
+                            ? "无"
+                            : t === "arc-up"
+                              ? "上弧"
+                              : "下弧"}
                         </button>
                       ))}
                     </div>
@@ -880,7 +1085,7 @@ export default function Home() {
                         min="5"
                         max="90"
                         value={textArc}
-                        onChange={(e) => setTextArc(parseInt(e.target.value, 10))}
+                        onChange={e => setTextArc(parseInt(e.target.value, 10))}
                       />
                     </div>
                   )}
@@ -895,10 +1100,10 @@ export default function Home() {
                     className="input"
                     placeholder="搜索 Emoji…"
                     value={emojiSearch}
-                    onChange={(e) => setEmojiSearch(e.target.value)}
+                    onChange={e => setEmojiSearch(e.target.value)}
                   />
                   <div className="chip-row">
-                    {EMOJI_CATEGORIES.map((cat) => (
+                    {EMOJI_CATEGORIES.map(cat => (
                       <button
                         key={cat.id}
                         className={`chip ${emojiCategory === cat.id ? "active" : ""}`}
@@ -937,11 +1142,11 @@ export default function Home() {
                       type="file"
                       accept="image/*"
                       style={{ display: "none" }}
-                      onChange={(e) => {
+                      onChange={e => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         const reader = new FileReader();
-                        reader.onload = (evt) => {
+                        reader.onload = evt => {
                           saveState();
                           setCustomImageDataUrl(evt.target?.result as string);
                         };
@@ -993,7 +1198,7 @@ export default function Home() {
                       className="input mono"
                       rows={4}
                       value={customSvgCode}
-                      onChange={(e) => setCustomSvgCode(e.target.value)}
+                      onChange={e => setCustomSvgCode(e.target.value)}
                       placeholder='<svg viewBox="0 0 24 24"><path d="..."/></svg>'
                     />
                   </div>
@@ -1019,25 +1224,34 @@ export default function Home() {
                     className="input"
                     placeholder="搜索品牌 Logo（如 github, apple, react）…"
                     value={brandSearch}
-                    onChange={(e) => setBrandSearch(e.target.value)}
+                    onChange={e => setBrandSearch(e.target.value)}
                   />
                   <div className="clip-grid">
-                    {BRAND_STARTER.map((n) => (
-                      <button
-                        key={n}
-                        onClick={() => {
-                          saveState();
-                          selectIcon({
-                            id: `simple-icons:${n}`,
-                            prefix: "simple-icons",
-                            name: n,
-                            collection: "Simple Icons",
-                          });
-                        }}
-                      >
-                        {n.slice(0, 2).toUpperCase()}
-                      </button>
-                    ))}
+                    {BRAND_STARTER.map(n => {
+                      const brandItem = {
+                        id: `simple-icons:${n}`,
+                        prefix: "simple-icons",
+                        name: n,
+                        collection: "Simple Icons",
+                      };
+                      return (
+                        <button
+                          key={n}
+                          className={
+                            shape === brandItem.id || iconId === brandItem.id
+                              ? "active"
+                              : ""
+                          }
+                          onClick={() => {
+                            saveState();
+                            selectIcon(brandItem);
+                          }}
+                          title={n}
+                        >
+                          <IconThumb item={brandItem} size={20} />
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1073,17 +1287,17 @@ export default function Home() {
                 <input
                   type="color"
                   value={fg}
-                  onChange={(e) => setFg(e.target.value)}
+                  onChange={e => setFg(e.target.value)}
                 />
                 {fgType === "gradient" && (
                   <input
                     type="color"
                     value={fgColor2}
-                    onChange={(e) => setFgColor2(e.target.value)}
+                    onChange={e => setFgColor2(e.target.value)}
                   />
                 )}
                 <span className="swatches">
-                  {PRESET_SWATCHES.map((hex) => (
+                  {PRESET_SWATCHES.map(hex => (
                     <i
                       key={hex}
                       style={{ backgroundColor: hex }}
@@ -1109,7 +1323,7 @@ export default function Home() {
                   min="15"
                   max="130"
                   value={scale}
-                  onChange={(e) => setScale(parseInt(e.target.value, 10))}
+                  onChange={e => setScale(parseInt(e.target.value, 10))}
                 />
               </div>
 
@@ -1124,7 +1338,7 @@ export default function Home() {
                     min="-40"
                     max="40"
                     value={dx}
-                    onChange={(e) => setDx(parseInt(e.target.value, 10))}
+                    onChange={e => setDx(parseInt(e.target.value, 10))}
                   />
                 </div>
                 <div className="field">
@@ -1137,7 +1351,7 @@ export default function Home() {
                     min="-40"
                     max="40"
                     value={dy}
-                    onChange={(e) => setDy(parseInt(e.target.value, 10))}
+                    onChange={e => setDy(parseInt(e.target.value, 10))}
                   />
                 </div>
               </div>
@@ -1152,7 +1366,7 @@ export default function Home() {
                   min="-180"
                   max="180"
                   value={rotation}
-                  onChange={(e) => setRotation(parseInt(e.target.value, 10))}
+                  onChange={e => setRotation(parseInt(e.target.value, 10))}
                 />
               </div>
 
@@ -1161,7 +1375,7 @@ export default function Home() {
                   className="btn ghost small"
                   onClick={() => {
                     saveState();
-                    setRotation((r) => r - 90);
+                    setRotation(r => r - 90);
                   }}
                 >
                   ↺ −90°
@@ -1170,7 +1384,7 @@ export default function Home() {
                   className="btn ghost small"
                   onClick={() => {
                     saveState();
-                    setRotation((r) => r + 90);
+                    setRotation(r => r + 90);
                   }}
                 >
                   ↻ +90°
@@ -1179,7 +1393,7 @@ export default function Home() {
                   className="btn ghost small"
                   onClick={() => {
                     saveState();
-                    setScale((s) => -s);
+                    setScale(s => -s);
                   }}
                 >
                   翻转
@@ -1208,7 +1422,16 @@ export default function Home() {
             </summary>
             <div className="acc-body">
               <div className="seg wrap">
-                {(["solid", "linear", "radial", "conic", "image", "transparent"] as const).map((bg) => (
+                {(
+                  [
+                    "solid",
+                    "linear",
+                    "radial",
+                    "conic",
+                    "image",
+                    "transparent",
+                  ] as const
+                ).map(bg => (
                   <button
                     key={bg}
                     className={background === bg ? "active" : ""}
@@ -1262,10 +1485,10 @@ export default function Home() {
                   <input
                     type="color"
                     value={bgColor1}
-                    onChange={(e) => setBgColor1(e.target.value)}
+                    onChange={e => setBgColor1(e.target.value)}
                   />
                   <span className="swatches">
-                    {PRESET_SWATCHES.map((hex) => (
+                    {PRESET_SWATCHES.map(hex => (
                       <i
                         key={hex}
                         style={{ backgroundColor: hex }}
@@ -1285,10 +1508,10 @@ export default function Home() {
                   <input
                     type="color"
                     value={color2}
-                    onChange={(e) => setColor2(e.target.value)}
+                    onChange={e => setColor2(e.target.value)}
                   />
                   <span className="swatches">
-                    {PRESET_SWATCHES.map((hex) => (
+                    {PRESET_SWATCHES.map(hex => (
                       <i
                         key={hex}
                         style={{ backgroundColor: hex }}
@@ -1312,7 +1535,7 @@ export default function Home() {
                   min="0"
                   max="360"
                   value={bgAngle}
-                  onChange={(e) => setBgAngle(parseInt(e.target.value, 10))}
+                  onChange={e => setBgAngle(parseInt(e.target.value, 10))}
                 />
               </div>
 
@@ -1331,7 +1554,7 @@ export default function Home() {
               <div className="field">
                 <label>图案纹理叠加</label>
                 <div className="texture-grid">
-                  {PATTERN_OPTIONS.map((opt) => (
+                  {PATTERN_OPTIONS.map(opt => (
                     <button
                       key={opt.id}
                       className={pattern === opt.id ? "active" : ""}
@@ -1358,7 +1581,9 @@ export default function Home() {
                       min="5"
                       max="100"
                       value={patternOpacity}
-                      onChange={(e) => setPatternOpacity(parseInt(e.target.value, 10))}
+                      onChange={e =>
+                        setPatternOpacity(parseInt(e.target.value, 10))
+                      }
                     />
                   </div>
                   <div className="field">
@@ -1371,7 +1596,9 @@ export default function Home() {
                       min="6"
                       max="32"
                       value={patternSize}
-                      onChange={(e) => setPatternSize(parseInt(e.target.value, 10))}
+                      onChange={e =>
+                        setPatternSize(parseInt(e.target.value, 10))
+                      }
                     />
                   </div>
                 </div>
@@ -1387,7 +1614,7 @@ export default function Home() {
                   min="0"
                   max="50"
                   value={noise}
-                  onChange={(e) => setNoise(parseInt(e.target.value, 10))}
+                  onChange={e => setNoise(parseInt(e.target.value, 10))}
                 />
               </div>
             </div>
@@ -1401,41 +1628,43 @@ export default function Home() {
             </summary>
             <div className="acc-body">
               <div className="preset-grid">
-                {(Object.keys(DESIGN_TEMPLATES) as DesignTemplateKey[]).map((key) => {
-                  const item = DESIGN_TEMPLATES[key];
-                  return (
-                    <button
-                      key={key}
-                      className="template-icon-card"
-                      onClick={() => applyTemplate(key)}
-                      title={`${item.name} · ${item.description}`}
-                    >
-                      <AppMark
-                        shape={item.shape || "rocket"}
-                        fg={item.fg || "#ffffff"}
-                        fgType={item.fgType || "solid"}
-                        fgColor2={item.fgColor2}
-                        fgAngle={item.fgAngle}
-                        background={item.background || "linear"}
-                        bgColor1={item.bgColor1}
-                        color2={item.color2 || "#eab308"}
-                        bgAngle={item.bgAngle ?? 135}
-                        pattern={item.pattern}
-                        noise={item.noise}
-                        rotation={item.rotation ?? 0}
-                        scale={item.scale ?? 60}
-                        dx={item.dx ?? 0}
-                        dy={item.dy ?? 0}
-                        shadow={item.shadow ?? true}
-                        mask={item.mask || "squircle"}
-                        maskRadius={item.maskRadius ?? 22}
-                        strokeEnabled={item.strokeEnabled}
-                        strokeWidth={item.strokeWidth}
-                        strokeColor={item.strokeColor}
-                      />
-                    </button>
-                  );
-                })}
+                {(Object.keys(DESIGN_TEMPLATES) as DesignTemplateKey[]).map(
+                  key => {
+                    const item = DESIGN_TEMPLATES[key];
+                    return (
+                      <button
+                        key={key}
+                        className="template-icon-card"
+                        onClick={() => applyTemplate(key)}
+                        title={`${item.name} · ${item.description}`}
+                      >
+                        <AppMark
+                          shape={item.shape || "rocket"}
+                          fg={item.fg || "#ffffff"}
+                          fgType={item.fgType || "solid"}
+                          fgColor2={item.fgColor2}
+                          fgAngle={item.fgAngle}
+                          background={item.background || "linear"}
+                          bgColor1={item.bgColor1}
+                          color2={item.color2 || "#eab308"}
+                          bgAngle={item.bgAngle ?? 135}
+                          pattern={item.pattern}
+                          noise={item.noise}
+                          rotation={item.rotation ?? 0}
+                          scale={item.scale ?? 60}
+                          dx={item.dx ?? 0}
+                          dy={item.dy ?? 0}
+                          shadow={item.shadow ?? true}
+                          mask={item.mask || "squircle"}
+                          maskRadius={item.maskRadius ?? 22}
+                          strokeEnabled={item.strokeEnabled}
+                          strokeWidth={item.strokeWidth}
+                          strokeColor={item.strokeColor}
+                        />
+                      </button>
+                    );
+                  }
+                )}
               </div>
             </div>
           </details>
@@ -1455,7 +1684,7 @@ export default function Home() {
                 </summary>
                 <div className="acc-body">
                   <div className="shape-grid">
-                    {MASK_OPTIONS.map((opt) => (
+                    {MASK_OPTIONS.map(opt => (
                       <button
                         key={opt.id}
                         className={mask === opt.id ? "active" : ""}
@@ -1479,7 +1708,7 @@ export default function Home() {
                       min="0"
                       max="20"
                       value={maskPad}
-                      onChange={(e) => setMaskPad(parseInt(e.target.value, 10))}
+                      onChange={e => setMaskPad(parseInt(e.target.value, 10))}
                     />
                   </div>
 
@@ -1493,7 +1722,7 @@ export default function Home() {
                         className="input mono"
                         rows={2}
                         value={customMask}
-                        onChange={(e) => setCustomMask(e.target.value)}
+                        onChange={e => setCustomMask(e.target.value)}
                       />
                       <button
                         className="btn ghost small"
@@ -1506,7 +1735,8 @@ export default function Home() {
                   )}
 
                   <p className="hint">
-                    蒙版作用于 Web / 桌面图标与中央画布；Android 与 iOS 导出按平台规范自动处理。
+                    蒙版作用于 Web / 桌面图标与中央画布；Android 与 iOS
+                    导出按平台规范自动处理。
                   </p>
                 </div>
               </details>
@@ -1523,19 +1753,25 @@ export default function Home() {
                     <div className="btn-row layer-row">
                       <button
                         className={`chip ${layersVisible.fg ? "active" : ""}`}
-                        onClick={() => setLayersVisible((l) => ({ ...l, fg: !l.fg }))}
+                        onClick={() =>
+                          setLayersVisible(l => ({ ...l, fg: !l.fg }))
+                        }
                       >
                         {layersVisible.fg ? "☑" : "☐"} 前景
                       </button>
                       <button
                         className={`chip ${layersVisible.bg ? "active" : ""}`}
-                        onClick={() => setLayersVisible((l) => ({ ...l, bg: !l.bg }))}
+                        onClick={() =>
+                          setLayersVisible(l => ({ ...l, bg: !l.bg }))
+                        }
                       >
                         {layersVisible.bg ? "☑" : "☐"} 背景
                       </button>
                       <button
                         className={`chip ${layersVisible.badge ? "active" : ""}`}
-                        onClick={() => setLayersVisible((l) => ({ ...l, badge: !l.badge }))}
+                        onClick={() =>
+                          setLayersVisible(l => ({ ...l, badge: !l.badge }))
+                        }
                       >
                         {layersVisible.badge ? "☑" : "☐"} 徽章
                       </button>
@@ -1547,7 +1783,7 @@ export default function Home() {
                   <div className="field">
                     <label>阴影</label>
                     <div className="seg">
-                      {(["none", "soft", "hard", "long"] as const).map((s) => (
+                      {(["none", "soft", "hard", "long"] as const).map(s => (
                         <button
                           key={s}
                           className={shadowPreset === s ? "active" : ""}
@@ -1557,7 +1793,13 @@ export default function Home() {
                             setShadow(s !== "none");
                           }}
                         >
-                          {s === "none" ? "无" : s === "soft" ? "柔和" : s === "hard" ? "硬边" : "长投影"}
+                          {s === "none"
+                            ? "无"
+                            : s === "soft"
+                              ? "柔和"
+                              : s === "hard"
+                                ? "硬边"
+                                : "长投影"}
                         </button>
                       ))}
                     </div>
@@ -1576,7 +1818,9 @@ export default function Home() {
                             min="-30"
                             max="30"
                             value={shadowOffsetX}
-                            onChange={(e) => setShadowOffsetX(parseInt(e.target.value, 10))}
+                            onChange={e =>
+                              setShadowOffsetX(parseInt(e.target.value, 10))
+                            }
                           />
                         </div>
                         <div className="field">
@@ -1589,7 +1833,9 @@ export default function Home() {
                             min="-30"
                             max="30"
                             value={shadowOffsetY}
-                            onChange={(e) => setShadowOffsetY(parseInt(e.target.value, 10))}
+                            onChange={e =>
+                              setShadowOffsetY(parseInt(e.target.value, 10))
+                            }
                           />
                         </div>
                       </div>
@@ -1604,7 +1850,9 @@ export default function Home() {
                             min="0"
                             max="40"
                             value={shadowBlur}
-                            onChange={(e) => setShadowBlur(parseInt(e.target.value, 10))}
+                            onChange={e =>
+                              setShadowBlur(parseInt(e.target.value, 10))
+                            }
                           />
                         </div>
                         <div className="field">
@@ -1617,7 +1865,9 @@ export default function Home() {
                             min="5"
                             max="90"
                             value={shadowAlpha}
-                            onChange={(e) => setShadowAlpha(parseInt(e.target.value, 10))}
+                            onChange={e =>
+                              setShadowAlpha(parseInt(e.target.value, 10))
+                            }
                           />
                         </div>
                       </div>
@@ -1625,7 +1875,7 @@ export default function Home() {
                         <input
                           type="color"
                           value={shadowColor}
-                          onChange={(e) => setShadowColor(e.target.value)}
+                          onChange={e => setShadowColor(e.target.value)}
                         />
                       </div>
                     </div>
@@ -1639,7 +1889,7 @@ export default function Home() {
                       <input
                         type="checkbox"
                         checked={strokeEnabled}
-                        onChange={(e) => setStrokeEnabled(e.target.checked)}
+                        onChange={e => setStrokeEnabled(e.target.checked)}
                       />
                     </label>
                   </div>
@@ -1650,7 +1900,7 @@ export default function Home() {
                       <input
                         type="checkbox"
                         checked={glowEnabled}
-                        onChange={(e) => setGlowEnabled(e.target.checked)}
+                        onChange={e => setGlowEnabled(e.target.checked)}
                       />
                     </label>
                   </div>
@@ -1660,7 +1910,7 @@ export default function Home() {
                   <div className="field">
                     <label>整体光泽</label>
                     <div className="seg small">
-                      {(["none", "top", "bevel"] as const).map((g) => (
+                      {(["none", "top", "bevel"] as const).map(g => (
                         <button
                           key={g}
                           className={gloss === g ? "active" : ""}
@@ -1669,7 +1919,11 @@ export default function Home() {
                             setGloss(g);
                           }}
                         >
-                          {g === "none" ? "无" : g === "top" ? "顶部高光" : "斜面光"}
+                          {g === "none"
+                            ? "无"
+                            : g === "top"
+                              ? "顶部高光"
+                              : "斜面光"}
                         </button>
                       ))}
                     </div>
@@ -1681,7 +1935,7 @@ export default function Home() {
                       <input
                         type="checkbox"
                         checked={innerBorder}
-                        onChange={(e) => setInnerBorder(e.target.checked)}
+                        onChange={e => setInnerBorder(e.target.checked)}
                       />
                     </label>
                   </div>
@@ -1701,7 +1955,7 @@ export default function Home() {
                       <input
                         type="checkbox"
                         checked={badgeEnabled}
-                        onChange={(e) => setBadgeEnabled(e.target.checked)}
+                        onChange={e => setBadgeEnabled(e.target.checked)}
                       />
                     </label>
                   </div>
@@ -1738,7 +1992,7 @@ export default function Home() {
                           type="text"
                           className="input"
                           value={badgeText}
-                          onChange={(e) => setBadgeText(e.target.value)}
+                          onChange={e => setBadgeText(e.target.value)}
                         />
                       </div>
 
@@ -1746,25 +2000,33 @@ export default function Home() {
                         <label>位置</label>
                         <div className="seg pos-4">
                           <button
-                            className={badgePosition === "top-left" ? "active" : ""}
+                            className={
+                              badgePosition === "top-left" ? "active" : ""
+                            }
                             onClick={() => setBadgePosition("top-left")}
                           >
                             ◤
                           </button>
                           <button
-                            className={badgePosition === "top-right" ? "active" : ""}
+                            className={
+                              badgePosition === "top-right" ? "active" : ""
+                            }
                             onClick={() => setBadgePosition("top-right")}
                           >
                             ◥
                           </button>
                           <button
-                            className={badgePosition === "bottom-left" ? "active" : ""}
+                            className={
+                              badgePosition === "bottom-left" ? "active" : ""
+                            }
                             onClick={() => setBadgePosition("bottom-left")}
                           >
                             ◣
                           </button>
                           <button
-                            className={badgePosition === "bottom-right" ? "active" : ""}
+                            className={
+                              badgePosition === "bottom-right" ? "active" : ""
+                            }
                             onClick={() => setBadgePosition("bottom-right")}
                           >
                             ◢
@@ -1782,7 +2044,9 @@ export default function Home() {
                           min="10"
                           max="50"
                           value={badgeSize}
-                          onChange={(e) => setBadgeSize(parseInt(e.target.value, 10))}
+                          onChange={e =>
+                            setBadgeSize(parseInt(e.target.value, 10))
+                          }
                         />
                       </div>
 
@@ -1792,7 +2056,7 @@ export default function Home() {
                           <input
                             type="color"
                             value={badgeBg}
-                            onChange={(e) => setBadgeBg(e.target.value)}
+                            onChange={e => setBadgeBg(e.target.value)}
                           />
                         </div>
                         <div className="field">
@@ -1800,7 +2064,7 @@ export default function Home() {
                           <input
                             type="color"
                             value={badgeColor}
-                            onChange={(e) => setBadgeColor(e.target.value)}
+                            onChange={e => setBadgeColor(e.target.value)}
                           />
                         </div>
                       </div>
@@ -1853,7 +2117,11 @@ export default function Home() {
               <Undo2 size={13} />
               <span>撤销</span>
             </button>
-            <button className="btn ghost small" onClick={redo} title="Ctrl+Shift+Z">
+            <button
+              className="btn ghost small"
+              onClick={redo}
+              title="Ctrl+Shift+Z"
+            >
               <Redo2 size={13} />
               <span>重做</span>
             </button>
@@ -1861,7 +2129,11 @@ export default function Home() {
               <RotateCcw size={13} />
               <span>重置全部</span>
             </button>
-            <button className="btn ghost small" onClick={saveToHistory} title="Ctrl+S">
+            <button
+              className="btn ghost small"
+              onClick={saveToHistory}
+              title="Ctrl+S"
+            >
               <Save size={13} />
               <span>存入历史</span>
             </button>
@@ -1873,7 +2145,7 @@ export default function Home() {
               type="text"
               className="input"
               value={appName}
-              onChange={(e) => {
+              onChange={e => {
                 saveState();
                 setAppName(e.target.value);
               }}
@@ -1884,13 +2156,19 @@ export default function Home() {
         {/* 右侧多平台仿真栏 */}
         <aside className="panel right">
           <div className="chip-row pv-filter">
-            {(["all", "mobile", "desktop", "web"] as const).map((p) => (
+            {(["all", "mobile", "desktop", "web"] as const).map(p => (
               <button
                 key={p}
                 className={`chip ${platform === p ? "active" : ""}`}
                 onClick={() => setPlatform(p)}
               >
-                {p === "all" ? "全部" : p === "mobile" ? "移动端" : p === "desktop" ? "电脑端" : "网页端"}
+                {p === "all"
+                  ? "全部"
+                  : p === "mobile"
+                    ? "移动端"
+                    : p === "desktop"
+                      ? "电脑端"
+                      : "网页端"}
               </button>
             ))}
           </div>
@@ -1956,14 +2234,16 @@ export default function Home() {
               { id: "macos", label: "macOS + ICNS" },
               { id: "windows", label: "Windows + ICO" },
             ] as const
-          ).map((item) => (
+          ).map(item => (
             <label key={item.id} className="check mini">
               <input
                 type="checkbox"
                 checked={selectedPlatforms.includes(item.id)}
                 onChange={() => {
-                  setSelectedPlatforms((list) =>
-                    list.includes(item.id) ? list.filter((p) => p !== item.id) : [...list, item.id]
+                  setSelectedPlatforms(list =>
+                    list.includes(item.id)
+                      ? list.filter(p => p !== item.id)
+                      : [...list, item.id]
                   );
                 }}
               />
@@ -1982,7 +2262,7 @@ export default function Home() {
             <input
               type="checkbox"
               checked={format === "WebP"}
-              onChange={(e) => setFormat(e.target.checked ? "WebP" : "PNG")}
+              onChange={e => setFormat(e.target.checked ? "WebP" : "PNG")}
             />
             <span>WebP</span>
           </label>
@@ -1990,7 +2270,7 @@ export default function Home() {
             <input
               type="checkbox"
               checked={format === "SVG"}
-              onChange={(e) => setFormat(e.target.checked ? "SVG" : "PNG")}
+              onChange={e => setFormat(e.target.checked ? "SVG" : "PNG")}
             />
             <span>SVG</span>
           </label>
@@ -2002,24 +2282,29 @@ export default function Home() {
             type="number"
             className="input tiny"
             value={customSizeInput}
-            onChange={(e) => setCustomSizeInput(parseInt(e.target.value, 10) || 512)}
+            onChange={e =>
+              setCustomSizeInput(parseInt(e.target.value, 10) || 512)
+            }
           />
           <button
             className="btn ghost small"
             onClick={() => {
-              if (customSizeInput > 0 && !customSizes.includes(customSizeInput)) {
-                setCustomSizes((s) => [...s, customSizeInput]);
+              if (
+                customSizeInput > 0 &&
+                !customSizes.includes(customSizeInput)
+              ) {
+                setCustomSizes(s => [...s, customSizeInput]);
               }
             }}
           >
             +
           </button>
           <span className="size-chips">
-            {customSizes.map((sz) => (
+            {customSizes.map(sz => (
               <span
                 key={sz}
                 className="chip mini"
-                onClick={() => setCustomSizes((s) => s.filter((x) => x !== sz))}
+                onClick={() => setCustomSizes(s => s.filter(x => x !== sz))}
                 title="点击删除"
               >
                 {sz} ×
@@ -2061,7 +2346,10 @@ export default function Home() {
               </div>
             )}
             <div className="dlg-actions">
-              <button className="btn ghost" onClick={() => setFileListOpen(false)}>
+              <button
+                className="btn ghost"
+                onClick={() => setFileListOpen(false)}
+              >
                 关闭
               </button>
               <button className="btn primary" onClick={downloadZip}>
@@ -2078,12 +2366,18 @@ export default function Home() {
           <div className="modal-content">
             <h2>历史记录</h2>
             {savedHistory.length === 0 ? (
-              <p style={{ color: "#94a3b8", fontSize: "0.85rem", padding: "16px 0" }}>
+              <p
+                style={{
+                  color: "#94a3b8",
+                  fontSize: "0.85rem",
+                  padding: "16px 0",
+                }}
+              >
                 暂无历史。点击画布下方「存入历史」或按 Ctrl+S 保存当前设计。
               </p>
             ) : (
               <div className="preset-grid history">
-                {savedHistory.map((item) => (
+                {savedHistory.map(item => (
                   <button
                     key={item.id}
                     className="template-icon-card"
@@ -2126,7 +2420,10 @@ export default function Home() {
                 清空
               </button>
               <span className="grow" />
-              <button className="btn ghost" onClick={() => setHistoryOpen(false)}>
+              <button
+                className="btn ghost"
+                onClick={() => setHistoryOpen(false)}
+              >
                 关闭
               </button>
             </div>

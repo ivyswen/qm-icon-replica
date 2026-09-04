@@ -1,7 +1,10 @@
 /**
  * 生成文字图标矢量 SVG
  */
-export function createTextSvg(text: string = "", fontFamily: string = "system-ui, -apple-system, sans-serif"): string {
+export function createTextSvg(
+  text: string = "",
+  fontFamily: string = "system-ui, -apple-system, sans-serif"
+): string {
   const clean = text ?? "";
   const len = Array.from(clean).length;
   let fontSize = 54;

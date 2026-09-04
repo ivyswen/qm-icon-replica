@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       platform:
-        description: '目标平台'
+        description: "目标平台"
         required: true
-        default: 'windows'
+        default: "windows"
         type: choice
         options:
           - windows
@@ -15,21 +15,21 @@ on:
           - linux
           - all
       name:
-        description: '应用名称'
+        description: "应用名称"
         required: false
-        default: 'QM icon Replica'
+        default: "QM icon Replica"
       icon:
-        description: '自定义图标 (留空则使用默认配置；可输入本地路径或网络图标 URL)'
+        description: "自定义图标 (留空则使用默认配置；可输入本地路径或网络图标 URL)"
         required: false
-        default: ''
+        default: ""
       width:
-        description: '窗口宽度'
+        description: "窗口宽度"
         required: false
-        default: '1280'
+        default: "1280"
       height:
-        description: '窗口高度'
+        description: "窗口高度"
         required: false
-        default: '860'
+        default: "860"
 
 jobs:
   build-windows:
@@ -47,8 +47,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install
@@ -97,8 +97,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install
@@ -154,8 +154,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install

@@ -40,4 +40,3 @@ describe("DESIGN_TEMPLATES - 设计模板预设 (TDD)", () => {
     expect(mono.fg).toBe("#0f172a");
   });
 });
-

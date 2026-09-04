@@ -62,18 +62,27 @@ export interface PreviewBaseProps {
  */
 export function AndroidShapeGrid(props: PreviewBaseProps) {
   const currentMask = props.mask || "squircle";
-  const isSpecialMask = !["circle", "squircle", "round", "none"].includes(currentMask);
+  const isSpecialMask = !["circle", "squircle", "round", "none"].includes(
+    currentMask
+  );
 
-  const shapes: Array<{ label: string; mask: ExportDesignState["mask"]; radius?: number }> = [
+  const shapes: Array<{
+    label: string;
+    mask: ExportDesignState["mask"];
+    radius?: number;
+  }> = [
     { label: "圆形", mask: "circle" },
     { label: "Squircle", mask: "squircle", radius: 22 },
     { label: "圆角", mask: "round", radius: props.maskRadius ?? 16 },
-    { label: isSpecialMask ? "当前蒙版" : "方形", mask: isSpecialMask ? currentMask : "none" },
+    {
+      label: isSpecialMask ? "当前蒙版" : "方形",
+      mask: isSpecialMask ? currentMask : "none",
+    },
   ];
 
   return (
     <div className="preview-shape-grid">
-      {shapes.map((item) => (
+      {shapes.map(item => (
         <div key={item.label} className="preview-shape-cell">
           <div className="shape-mark-box">
             <AppMark
@@ -184,7 +193,11 @@ export function WebTabSimulator(props: PreviewBaseProps) {
         <div className="browser-tab-preview">
           <div className="browser-tab-pill">
             <div className="tab-favicon">
-              <AppMark {...props} mask={props.mask === "none" ? "round" : mask} shadow={false} />
+              <AppMark
+                {...props}
+                mask={props.mask === "none" ? "round" : mask}
+                shadow={false}
+              />
             </div>
             <span className="tab-title">{props.appName || "My App"}</span>
             <span className="tab-close">×</span>
@@ -285,7 +298,9 @@ export function WatchAppleTvPreview(props: PreviewBaseProps) {
           <div className="store-card-info">
             <h4 className="store-card-name">{props.appName || "My App"}</h4>
             <div className="store-card-rating">★★★★★ · 免费</div>
-            <button className="store-card-btn" type="button">获取</button>
+            <button className="store-card-btn" type="button">
+              获取
+            </button>
           </div>
         </div>
         <span className="shape-cell-label">商店卡片</span>

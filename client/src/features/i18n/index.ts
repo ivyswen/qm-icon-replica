@@ -96,11 +96,14 @@ export const TRANSLATIONS = {
       title: "QM icon 工作站使用说明",
       subtitle: "专业级跨平台图标设计与打包指南",
       feature1Title: "1. 双轨图标体系与中文智能检索",
-      feature1Desc: "内置 64 个离线核心矢量图形，支持通过 100+ 中文语义别名并发检索 20,000+ Iconify 全球开源图标库。",
+      feature1Desc:
+        "内置 64 个离线核心矢量图形，支持通过 100+ 中文语义别名并发检索 20,000+ Iconify 全球开源图标库。",
       feature2Title: "2. 图标渐变与背景角度",
-      feature2Desc: "在「图标颜色」切换为「渐变」可配置起点色、终点色与渐变角度；在「背景设计」中拖动角度滑块或点击「⇄ 交换」可快速反转配色。",
+      feature2Desc:
+        "在「图标颜色」切换为「渐变」可配置起点色、终点色与渐变角度；在「背景设计」中拖动角度滑块或点击「⇄ 交换」可快速反转配色。",
       feature3Title: "3. 14+ 平台无损打包导出",
-      feature3Desc: "支持 Android Adaptive Icons (XML)、iOS AppIcon (Contents.json)、macOS (.iconset)、Web (manifest.json) 与 Windows (.ico)，下载前可点击「下载 ZIP 包」查看文件树清单。",
+      feature3Desc:
+        "支持 Android Adaptive Icons (XML)、iOS AppIcon (Contents.json)、macOS (.iconset)、Web (manifest.json) 与 Windows (.ico)，下载前可点击「下载 ZIP 包」查看文件树清单。",
       close: "知道了，开始设计",
     },
     history: {
@@ -206,18 +209,22 @@ export const TRANSLATIONS = {
       title: "QM icon Station Guide",
       subtitle: "Professional Cross-Platform Icon Design & Packaging Guide",
       feature1Title: "1. 20,000+ Iconify & Vector Engine",
-      feature1Desc: "64 built-in offline vector shapes + 20,000+ global Iconify icons with dual-track query search.",
+      feature1Desc:
+        "64 built-in offline vector shapes + 20,000+ global Iconify icons with dual-track query search.",
       feature2Title: "2. Icon Gradients & Angle Controls",
-      feature2Desc: "Switch to Gradient mode for dual-stop colors and angles; easily swap background gradients with one click.",
+      feature2Desc:
+        "Switch to Gradient mode for dual-stop colors and angles; easily swap background gradients with one click.",
       feature3Title: "3. 14+ Platform Asset Packaging",
-      feature3Desc: "One-click export for Android Adaptive Icons, iOS AppIcon, macOS .iconset, Web manifest and Windows .ico.",
+      feature3Desc:
+        "One-click export for Android Adaptive Icons, iOS AppIcon, macOS .iconset, Web manifest and Windows .ico.",
       close: "Got it, Start Designing",
     },
     history: {
       title: "History",
       subtitle: "Stored in current browser, up to 20 snapshots",
       emptyTitle: "No saved designs yet",
-      emptyDesc: "Click 'Save to History' below the canvas to create a snapshot",
+      emptyDesc:
+        "Click 'Save to History' below the canvas to create a snapshot",
       clear: "Clear All History",
     },
   },

@@ -1,5 +1,15 @@
 /* QM icon 复刻提醒：图标搜索使用无需密钥的 Iconify 公共 API 与内置离线矢量库融合方案。 */
-import { BUILTIN_ICONS, DEFAULT_ICONIFY_ICONS, ICON_QUERY_ALIASES, type BuiltinIcon } from "./data/builtinIcons";
+import {
+  BUILTIN_ICONS,
+  DEFAULT_ICONIFY_ICONS,
+  ICON_QUERY_ALIASES,
+  type BuiltinIcon,
+} from "./data/builtinIcons";
+
+export type IconData = {
+  body: string;
+  viewBox: string;
+};
 
 export type IconSearchItem = {
   id: string;
@@ -11,6 +21,8 @@ export type IconSearchItem = {
   isBuiltin?: boolean;
   d?: string;
   fr?: "evenodd" | "nonzero";
+  body?: string;
+  viewBox?: string;
 };
 
 type IconifySearchResponse = {
@@ -18,9 +30,68 @@ type IconifySearchResponse = {
   collections?: Record<string, { name?: string; license?: { title?: string } }>;
 };
 
-const API_HOSTS = ["https://api.iconify.design", "https://api.simplesvg.com", "https://api.unisvg.com"];
+const API_HOSTS = [
+  "https://api.iconify.design",
+  "https://api.simplesvg.com",
+  "https://api.unisvg.com",
+];
 
-function normalizeIcon(id: string, collections?: IconifySearchResponse["collections"]): IconSearchItem {
+export const BASE_SHAPES: Record<
+  string,
+  { d?: string; tag?: string; vb: string }
+> = {
+  spark: {
+    d: "M50 7 60 39 93 50 60 61 50 94 40 61 7 50 40 39Z",
+    vb: "0 0 100 100",
+  },
+  circle: {
+    tag: '<circle cx="50" cy="50" r="34" fill="currentColor"/>',
+    vb: "0 0 100 100",
+  },
+  diamond: {
+    tag: '<rect x="19" y="19" width="62" height="62" rx="12" transform="rotate(45 50 50)" fill="currentColor"/>',
+    vb: "0 0 100 100",
+  },
+  hex: { d: "M50 11 84 30v40L50 89 16 70V30Z", vb: "0 0 100 100" },
+  heart: {
+    d: "M50 82 18 49c-13-15-3-36 14-36 9 0 16 5 18 13 3-8 10-13 19-13 17 0 27 21 14 36Z",
+    vb: "0 0 100 100",
+  },
+};
+
+// 内存图标数据缓存
+const iconDataCache = new Map<string, IconData>();
+type CacheListener = (id: string, data: IconData) => void;
+const cacheListeners = new Set<CacheListener>();
+
+export function subscribeIconCache(listener: CacheListener): () => void {
+  cacheListeners.add(listener);
+  return () => {
+    cacheListeners.delete(listener);
+  };
+}
+
+export function getCachedIcon(id: string): IconData | undefined {
+  return iconDataCache.get(id);
+}
+
+export function setCachedIcon(id: string, data: IconData): void {
+  iconDataCache.set(id, data);
+  cacheListeners.forEach(listener => {
+    try {
+      listener(id, data);
+    } catch {}
+  });
+}
+
+export function clearIconCache(): void {
+  iconDataCache.clear();
+}
+
+function normalizeIcon(
+  id: string,
+  collections?: IconifySearchResponse["collections"]
+): IconSearchItem {
   const [prefix, ...nameParts] = id.split(":");
   const collection = collections?.[prefix];
   return {
@@ -46,13 +117,21 @@ async function fetchWithFallback(path: string) {
       lastError = error;
     }
   }
-  throw lastError instanceof Error ? lastError : new Error("Iconify API unavailable");
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Iconify API unavailable");
 }
 
 export function getBuiltinIcons(filter = ""): IconSearchItem[] {
   const f = filter.trim().toLowerCase();
-  const list = BUILTIN_ICONS.filter((i) => !f || i.n.toLowerCase().includes(f) || i.label.toLowerCase().includes(f) || i.k.toLowerCase().includes(f));
-  return list.map((i) => ({
+  const list = BUILTIN_ICONS.filter(
+    i =>
+      !f ||
+      i.n.toLowerCase().includes(f) ||
+      i.label.toLowerCase().includes(f) ||
+      i.k.toLowerCase().includes(f)
+  );
+  return list.map(i => ({
     id: i.n,
     prefix: "builtin",
     name: i.n,
@@ -67,8 +146,11 @@ export function getBuiltinIcons(filter = ""): IconSearchItem[] {
 
 export function getDefaultStarterIcons(): IconSearchItem[] {
   const builtins = getBuiltinIcons();
-  const online = DEFAULT_ICONIFY_ICONS.map((id) => normalizeIcon(id));
-  return [...builtins, ...online];
+  const online = DEFAULT_ICONIFY_ICONS.map(id => normalizeIcon(id));
+  const starter = [...builtins, ...online];
+  // 异步预热默认推荐的在线精选图标
+  batchFetchIconData(DEFAULT_ICONIFY_ICONS).catch(() => {});
+  return starter;
 }
 
 export function getQueryCandidates(rawQuery: string): string[] {
@@ -84,7 +166,7 @@ export function getQueryCandidates(rawQuery: string): string[] {
     }
   }
 
-  const hit = BUILTIN_ICONS.find((i) => {
+  const hit = BUILTIN_ICONS.find(i => {
     const k = i.k.toLowerCase();
     return i.n === folded || i.label === raw || k.includes(raw);
   });
@@ -98,7 +180,11 @@ export function getQueryCandidates(rawQuery: string): string[] {
   return candidates.slice(0, 4);
 }
 
-export async function searchIconify(query: string, limit = 72, prefix?: string): Promise<IconSearchItem[]> {
+export async function searchIconify(
+  query: string,
+  limit = 72,
+  prefix?: string
+): Promise<IconSearchItem[]> {
   const trimmed = query.trim();
   if (!trimmed) return getDefaultStarterIcons();
 
@@ -128,55 +214,185 @@ export async function searchIconify(query: string, limit = 72, prefix?: string):
 
   // 3. 聚合去重合并返回
   const combined = [...localHits];
-  onlineMap.forEach((item) => {
+  onlineMap.forEach(item => {
     combined.push(item);
   });
+
+  // 自动后台批量预热前 36 个在线图标矢量
+  const onlineIds = combined.filter(i => !i.isBuiltin).map(i => i.id);
+  if (onlineIds.length > 0) {
+    batchFetchIconData(onlineIds.slice(0, 36)).catch(() => {});
+  }
+
   return combined;
 }
 
-export async function fetchIconDetail(id: string): Promise<{ svg: string; viewBox: string }> {
-  // 检查是否为内置图标
-  const builtin = BUILTIN_ICONS.find((i) => i.n === id);
+const pendingBatchRequests = new Map<string, Promise<void>>();
+
+export async function batchFetchIconData(ids: string[]): Promise<void> {
+  const neededByPrefix = new Map<string, Set<string>>();
+
+  for (const id of ids) {
+    if (!id || typeof id !== "string") continue;
+    if (iconDataCache.has(id)) continue;
+    if (BUILTIN_ICONS.some(b => b.n === id)) continue;
+    if (id in BASE_SHAPES) continue;
+
+    const [prefix, ...nameParts] = id.split(":");
+    const name = nameParts.join(":");
+    if (!prefix || !name) continue;
+
+    if (!neededByPrefix.has(prefix)) {
+      neededByPrefix.set(prefix, new Set());
+    }
+    neededByPrefix.get(prefix)!.add(name);
+  }
+
+  if (neededByPrefix.size === 0) return;
+
+  const tasks: Promise<void>[] = [];
+
+  neededByPrefix.forEach((nameSet, prefix) => {
+    const names = Array.from(nameSet);
+    const taskKey = `${prefix}:${names.sort().join(",")}`;
+    const existing = pendingBatchRequests.get(taskKey);
+    if (existing) {
+      tasks.push(existing);
+      return;
+    }
+
+    const promise = (async () => {
+      let succeeded = false;
+      for (const host of API_HOSTS) {
+        try {
+          const response = await fetch(
+            `${host}/${encodeURIComponent(prefix)}.json?icons=${encodeURIComponent(names.join(","))}`,
+            {
+              headers: { Accept: "application/json" },
+              signal: AbortSignal.timeout(6000),
+            }
+          );
+          if (!response.ok) continue;
+          const data = (await response.json()) as {
+            icons?: Record<
+              string,
+              {
+                body?: string;
+                left?: number;
+                top?: number;
+                width?: number;
+                height?: number;
+              }
+            >;
+            width?: number;
+            height?: number;
+          };
+          const icons = data.icons || {};
+          const defaultWidth = data.width || 24;
+          const defaultHeight = data.height || 24;
+
+          for (const name of names) {
+            const item = icons[name];
+            if (item && item.body) {
+              const vb = `${item.left || 0} ${item.top || 0} ${item.width || defaultWidth} ${item.height || defaultHeight}`;
+              setCachedIcon(`${prefix}:${name}`, {
+                body: item.body,
+                viewBox: vb,
+              });
+            }
+          }
+          succeeded = true;
+          break;
+        } catch {
+          // 容灾重试下一个镜像站点
+        }
+      }
+
+      // 若批量拉取未完全获取，对缺失图标单图兜底
+      if (!succeeded) {
+        await Promise.allSettled(
+          names.map(async name => {
+            const id = `${prefix}:${name}`;
+            if (iconDataCache.has(id)) return;
+            try {
+              const detail = await fetchIconDetail(id);
+              const inner = detail.svg
+                .replace(/^<svg[^>]*>/i, "")
+                .replace(/<\/svg>$/i, "");
+              setCachedIcon(id, {
+                body: inner,
+                viewBox: detail.viewBox,
+              });
+            } catch {}
+          })
+        );
+      }
+    })().finally(() => {
+      pendingBatchRequests.delete(taskKey);
+    });
+
+    pendingBatchRequests.set(taskKey, promise);
+    tasks.push(promise);
+  });
+
+  await Promise.allSettled(tasks);
+}
+
+export async function fetchIconDetail(
+  id: string
+): Promise<{ svg: string; viewBox: string }> {
+  // 1. 命中缓存
+  const cached = iconDataCache.get(id);
+  if (cached) {
+    return {
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${cached.viewBox}">${cached.body}</svg>`,
+      viewBox: cached.viewBox,
+    };
+  }
+
+  // 2. 检查是否为内置图标
+  const builtin = BUILTIN_ICONS.find(i => i.n === id);
   if (builtin) {
     const body = `<path d="${builtin.d}" fill="currentColor"${builtin.fr ? ` fill-rule="${builtin.fr}"` : ""}/>`;
-    return {
+    const res = {
       svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">${body}</svg>`,
       viewBox: "0 0 24 24",
     };
+    setCachedIcon(id, { body, viewBox: "0 0 24 24" });
+    return res;
   }
 
-  // 5种基础几何形状
-  const baseShapes: Record<string, { d?: string; tag?: string; vb: string }> = {
-    spark: { d: "M50 7 60 39 93 50 60 61 50 94 40 61 7 50 40 39Z", vb: "0 0 100 100" },
-    circle: { tag: '<circle cx="50" cy="50" r="34" fill="currentColor"/>', vb: "0 0 100 100" },
-    diamond: { tag: '<rect x="19" y="19" width="62" height="62" rx="12" transform="rotate(45 50 50)" fill="currentColor"/>', vb: "0 0 100 100" },
-    hex: { d: "M50 11 84 30v40L50 89 16 70V30Z", vb: "0 0 100 100" },
-    heart: { d: "M50 82 18 49c-13-15-3-36 14-36 9 0 16 5 18 13 3-8 10-13 19-13 17 0 27 21 14 36Z", vb: "0 0 100 100" },
-  };
-  if (baseShapes[id]) {
-    const s = baseShapes[id];
+  // 3. 5种基础几何形状
+  if (BASE_SHAPES[id]) {
+    const s = BASE_SHAPES[id];
     const body = s.d ? `<path d="${s.d}" fill="currentColor"/>` : s.tag!;
-    return {
+    const res = {
       svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${s.vb}">${body}</svg>`,
       viewBox: s.vb,
     };
+    setCachedIcon(id, { body, viewBox: s.vb });
+    return res;
   }
 
-  // 在线 Iconify 获取完整矢量和 viewBox
+  // 4. 在线 Iconify 获取完整矢量和 viewBox
   const [prefix, ...nameParts] = id.split(":");
   const name = nameParts.join(":");
   if (prefix && name) {
     for (const host of API_HOSTS) {
       try {
-        const response = await fetch(`${host}/${encodeURIComponent(prefix)}.json?icons=${encodeURIComponent(name)}`, {
-          headers: { Accept: "application/json" },
-          signal: AbortSignal.timeout(6000),
-        });
+        const response = await fetch(
+          `${host}/${encodeURIComponent(prefix)}.json?icons=${encodeURIComponent(name)}`,
+          {
+            headers: { Accept: "application/json" },
+            signal: AbortSignal.timeout(6000),
+          }
+        );
         if (response.ok) {
           const data = await response.json();
           const item = data.icons?.[name];
           if (item) {
             const vb = `${item.left || 0} ${item.top || 0} ${item.width || data.width || 24} ${item.height || data.height || 24}`;
+            setCachedIcon(id, { body: item.body, viewBox: vb });
             return {
               svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}">${item.body}</svg>`,
               viewBox: vb,
@@ -187,17 +403,20 @@ export async function fetchIconDetail(id: string): Promise<{ svg: string; viewBo
     }
   }
 
-  // 回退：直接获取 SVG
+  // 5. 回退：直接获取 SVG
   const svgText = await fetchIconSvg(id);
   const vbMatch = svgText.match(/viewBox=["']([^"']+)["']/i);
+  const vb = vbMatch?.[1] || "0 0 24 24";
+  const inner = svgText.replace(/^<svg[^>]*>/i, "").replace(/<\/svg>$/i, "");
+  setCachedIcon(id, { body: inner, viewBox: vb });
   return {
     svg: svgText,
-    viewBox: vbMatch?.[1] || "0 0 24 24",
+    viewBox: vb,
   };
 }
 
 export async function fetchIconSvg(id: string): Promise<string> {
-  const builtin = BUILTIN_ICONS.find((i) => i.n === id);
+  const builtin = BUILTIN_ICONS.find(i => i.n === id);
   if (builtin) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="${builtin.d}" fill="currentColor"${builtin.fr ? ` fill-rule="${builtin.fr}"` : ""}/></svg>`;
   }
@@ -207,21 +426,26 @@ export async function fetchIconSvg(id: string): Promise<string> {
   let lastError: unknown;
   for (const host of API_HOSTS) {
     try {
-      const response = await fetch(`${host}/${encodeURIComponent(prefix)}/${encodeURIComponent(name)}.svg?box=1`, {
-        headers: { Accept: "image/svg+xml,text/plain" },
-        signal: AbortSignal.timeout(6000),
-      });
+      const response = await fetch(
+        `${host}/${encodeURIComponent(prefix)}/${encodeURIComponent(name)}.svg?box=1`,
+        {
+          headers: { Accept: "image/svg+xml,text/plain" },
+          signal: AbortSignal.timeout(6000),
+        }
+      );
       if (!response.ok) throw new Error(`Iconify SVG ${response.status}`);
       return await response.text();
     } catch (error) {
       lastError = error;
     }
   }
-  throw lastError instanceof Error ? lastError : new Error("Icon SVG unavailable");
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Icon SVG unavailable");
 }
 
 export function iconSvgUrl(id: string): string {
-  const builtin = BUILTIN_ICONS.find((i) => i.n === id);
+  const builtin = BUILTIN_ICONS.find(i => i.n === id);
   if (builtin) {
     return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="${encodeURIComponent(builtin.d)}" fill="%23808080"/></svg>`;
   }

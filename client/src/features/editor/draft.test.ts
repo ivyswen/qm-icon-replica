@@ -70,7 +70,10 @@ describe("editor draft storage - 本地草稿自动持久化测试", () => {
   });
 
   it("当本地数据残缺或部分字段缺失时，应能平滑合并默认值，不破坏应用状态", () => {
-    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ shape: "circle", fg: "#123456" }));
+    window.localStorage.setItem(
+      DRAFT_STORAGE_KEY,
+      JSON.stringify({ shape: "circle", fg: "#123456" })
+    );
     const readBack = readSavedDraft();
 
     expect(readBack.shape).toBe("circle");

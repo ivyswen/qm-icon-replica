@@ -25,11 +25,19 @@ function readStoredTheme(defaultTheme: Theme): Theme {
   } catch {
     // Private browsing or blocked storage falls back to the system preference.
   }
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : defaultTheme;
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : defaultTheme;
 }
 
-export function ThemeProvider({ children, defaultTheme = "light", switchable = false }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => switchable ? readStoredTheme(defaultTheme) : defaultTheme);
+export function ThemeProvider({
+  children,
+  defaultTheme = "light",
+  switchable = false,
+}: ThemeProviderProps) {
+  const [theme, setTheme] = useState<Theme>(() =>
+    switchable ? readStoredTheme(defaultTheme) : defaultTheme
+  );
 
   useEffect(() => {
     const root = document.documentElement;
@@ -45,9 +53,15 @@ export function ThemeProvider({ children, defaultTheme = "light", switchable = f
     }
   }, [theme, switchable]);
 
-  const toggleTheme = switchable ? () => setTheme((previous) => previous === "light" ? "dark" : "light") : undefined;
+  const toggleTheme = switchable
+    ? () => setTheme(previous => (previous === "light" ? "dark" : "light"))
+    : undefined;
 
-  return <ThemeContext.Provider value={{ theme, toggleTheme, switchable }}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme, switchable }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 }
 
 export function useTheme() {

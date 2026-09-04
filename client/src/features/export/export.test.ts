@@ -36,7 +36,11 @@ describe("createSvgMarkup - 前景渐变与控制能力 (TDD)", () => {
   };
 
   it("当 fgType 为 solid 时，图标 group 或 fill 应该为单色 fg", () => {
-    const svg = createSvgMarkup({ ...baseState, fgType: "solid", fg: "#ff0000" });
+    const svg = createSvgMarkup({
+      ...baseState,
+      fgType: "solid",
+      fg: "#ff0000",
+    });
     expect(svg).toContain('color="#ff0000"');
     expect(svg).not.toContain('id="icon-fg-gradient"');
   });
@@ -125,7 +129,3 @@ describe("createSvgMarkup - 前景渐变与控制能力 (TDD)", () => {
     expect(svgTeardrop).toContain('<path d="M50 6');
   });
 });
-
-
-
-

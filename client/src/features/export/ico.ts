@@ -20,8 +20,9 @@ export function encodeIco(images: IcoImageSource[]): Blob {
   const dirSize = headerSize + count * entrySize;
 
   // 计算各个图像的数据大小与偏移量
-  const normalizedImages = images.map((img) => {
-    const rawData = img.data instanceof Uint8Array ? img.data : new Uint8Array(img.data);
+  const normalizedImages = images.map(img => {
+    const rawData =
+      img.data instanceof Uint8Array ? img.data : new Uint8Array(img.data);
     return {
       width: img.width,
       height: img.height,
@@ -30,7 +31,10 @@ export function encodeIco(images: IcoImageSource[]): Blob {
     };
   });
 
-  const totalImageBytes = normalizedImages.reduce((sum, img) => sum + img.size, 0);
+  const totalImageBytes = normalizedImages.reduce(
+    (sum, img) => sum + img.size,
+    0
+  );
   const totalBufferSize = dirSize + totalImageBytes;
 
   const buffer = new ArrayBuffer(totalBufferSize);

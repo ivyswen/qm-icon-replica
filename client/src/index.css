@@ -64,7 +64,12 @@
 }
 
 body {
-  font-family: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    "Inter",
+    "Noto Sans SC",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   background-color: var(--bg-app);
   color: var(--text-main);
   user-select: none;
@@ -232,7 +237,9 @@ details.pv-card > summary::after {
   border-right: 2px solid var(--text-muted);
   border-bottom: 2px solid var(--text-muted);
   transform: rotate(-45deg);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
   margin-left: auto;
   flex-shrink: 0;
 }
@@ -268,7 +275,9 @@ details.acc > summary {
   list-style: none;
   background: var(--bg-panel);
   color: var(--text-main);
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 details.acc > summary:hover {
@@ -330,12 +339,24 @@ details.mini-acc > .acc-body {
   display: inline-block;
   flex-shrink: 0;
 }
-.dot.d1 { background-color: var(--accent-dot1); }
-.dot.d2 { background-color: var(--accent-dot2); }
-.dot.d3 { background-color: var(--accent-dot3); }
-.dot.d4 { background-color: var(--accent-dot4); }
-.dot.d5 { background-color: var(--accent-dot5); }
-.dot.d6 { background-color: var(--accent-dot6); }
+.dot.d1 {
+  background-color: var(--accent-dot1);
+}
+.dot.d2 {
+  background-color: var(--accent-dot2);
+}
+.dot.d3 {
+  background-color: var(--accent-dot3);
+}
+.dot.d4 {
+  background-color: var(--accent-dot4);
+}
+.dot.d5 {
+  background-color: var(--accent-dot5);
+}
+.dot.d6 {
+  background-color: var(--accent-dot6);
+}
 
 /* 分段器组件 */
 .seg {
@@ -480,7 +501,9 @@ details.mini-acc > .acc-body {
   background: var(--bg-subtle);
   color: var(--text-main);
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .input:focus {
@@ -531,7 +554,9 @@ input[type="range"]::-webkit-slider-thumb {
   border: 2px solid var(--bg-panel);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   cursor: pointer;
-  transition: transform 0.1s ease, background 0.15s ease;
+  transition:
+    transform 0.1s ease,
+    background 0.15s ease;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
@@ -689,6 +714,33 @@ input[type="range"]::-moz-range-thumb {
 .dark .clip-grid button:hover,
 .dark .clip-grid button.active {
   color: #34d399;
+}
+
+.clip-grid button svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.icon-skeleton {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--text-muted, currentColor);
+  opacity: 0.35;
+  animation: icon-skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes icon-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
 }
 
 .clip-grid.emoji {
@@ -902,7 +954,9 @@ p.hint {
   justify-content: center;
   border-radius: 16px;
   position: relative;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
   border: 1px solid var(--border-color);
 }
 
@@ -923,12 +977,17 @@ p.hint {
 }
 
 .stage-canvas-wrap.checker {
-  background-image: linear-gradient(45deg, var(--border-color) 25%, transparent 25%),
+  background-image:
+    linear-gradient(45deg, var(--border-color) 25%, transparent 25%),
     linear-gradient(-45deg, var(--border-color) 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, var(--border-color) 75%),
     linear-gradient(-45deg, transparent 75%, var(--border-color) 75%);
   background-size: 16px 16px;
-  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0px;
   background-color: var(--bg-panel);
 }
 

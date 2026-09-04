@@ -20,7 +20,18 @@ export type ExportDesignState = {
   imageMonochrome?: boolean;
   bgImageUrl?: string;
 
-  mask: "none" | "squircle" | "round" | "circle" | "hex" | "star" | "diamond" | "triangle" | "teardrop" | "shield" | "custom";
+  mask:
+    | "none"
+    | "squircle"
+    | "round"
+    | "circle"
+    | "hex"
+    | "star"
+    | "diamond"
+    | "triangle"
+    | "teardrop"
+    | "shield"
+    | "custom";
   maskRadius?: number;
   maskPad?: number;
   customMask?: string;
@@ -61,7 +72,14 @@ export type ExportDesignState = {
   bgColor1?: string;
   color2: string;
   bgAngle?: number;
-  pattern?: "none" | "dots" | "stripes" | "grid" | "checker" | "waves" | "cross";
+  pattern?:
+    | "none"
+    | "dots"
+    | "stripes"
+    | "grid"
+    | "checker"
+    | "waves"
+    | "cross";
   patternOpacity?: number;
   patternSize?: number;
   noise?: number;
@@ -74,15 +92,28 @@ export type ExportDesignState = {
 };
 
 const shapes: Record<string, string> = {
-  spark: '<path d="M50 7 60 39 93 50 60 61 50 94 40 61 7 50 40 39Z" fill="currentColor"/>',
+  spark:
+    '<path d="M50 7 60 39 93 50 60 61 50 94 40 61 7 50 40 39Z" fill="currentColor"/>',
   circle: '<circle cx="50" cy="50" r="34" fill="currentColor"/>',
-  diamond: '<rect x="19" y="19" width="62" height="62" rx="12" transform="rotate(45 50 50)" fill="currentColor"/>',
+  diamond:
+    '<rect x="19" y="19" width="62" height="62" rx="12" transform="rotate(45 50 50)" fill="currentColor"/>',
   hex: '<path d="M50 11 84 30v40L50 89 16 70V30Z" fill="currentColor"/>',
-  heart: '<path d="M50 82 18 49c-13-15-3-36 14-36 9 0 16 5 18 13 3-8 10-13 19-13 17 0 27 21 14 36Z" fill="currentColor"/>',
+  heart:
+    '<path d="M50 82 18 49c-13-15-3-36 14-36 9 0 16 5 18 13 3-8 10-13 19-13 17 0 27 21 14 36Z" fill="currentColor"/>',
 };
 
 function escapeXml(value: string) {
-  return value.replace(/[<>&'\"]/g, (character) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" })[character] ?? character);
+  return value.replace(
+    /[<>&'\"]/g,
+    character =>
+      ({
+        "<": "&lt;",
+        ">": "&gt;",
+        "&": "&amp;",
+        "'": "&apos;",
+        '"': "&quot;",
+      })[character] ?? character
+  );
 }
 
 function angleToCoordinates(angleInDegrees: number = 135) {
@@ -97,10 +128,14 @@ function angleToCoordinates(angleInDegrees: number = 135) {
 }
 
 function extractRemoteSvg(iconSvg: string) {
-  const viewBox = iconSvg.match(/viewBox=["']([^"']+)["']/i)?.[1] || "0 0 24 24";
+  const viewBox =
+    iconSvg.match(/viewBox=["']([^"']+)["']/i)?.[1] || "0 0 24 24";
   const openingEnd = iconSvg.indexOf(">") + 1;
   const closingStart = iconSvg.lastIndexOf("</svg>");
-  const inner = openingEnd > 0 && closingStart > openingEnd ? iconSvg.slice(openingEnd, closingStart) : iconSvg;
+  const inner =
+    openingEnd > 0 && closingStart > openingEnd
+      ? iconSvg.slice(openingEnd, closingStart)
+      : iconSvg;
   return { viewBox, inner };
 }
 
@@ -115,7 +150,9 @@ function backgroundPaint(state: ExportDesignState) {
 
 export function createSvgMarkup(state: ExportDesignState) {
   const isFgGradient = state.fgType === "gradient";
-  const fgPaint = isFgGradient ? "url(#icon-fg-gradient)" : (state.fg || "#0f766e");
+  const fgPaint = isFgGradient
+    ? "url(#icon-fg-gradient)"
+    : state.fg || "#0f766e";
   const fgCoords = angleToCoordinates(state.fgAngle ?? 90);
   const fgGradientDef = isFgGradient
     ? `<linearGradient id="icon-fg-gradient" x1="${fgCoords.x1}" y1="${fgCoords.y1}" x2="${fgCoords.x2}" y2="${fgCoords.y2}">
@@ -200,29 +237,65 @@ export function createSvgMarkup(state: ExportDesignState) {
   const showBadge = state.badgeEnabled && state.layersVisible?.badge !== false;
 
   const bgFill = showBg ? backgroundPaint(state) : "none";
-  const bgRect = bgFill !== "none" ? `<rect width="100" height="100" fill="${bgFill}"/>` : "";
-  const glossRect = showBg && state.gloss === "top"
-    ? '<rect width="100" height="100" fill="url(#bg-top-gloss)" style="mix-blend-mode:screen"/>'
-    : showBg && state.gloss === "bevel"
-      ? '<rect width="100" height="100" fill="url(#bg-bevel-gloss)" style="mix-blend-mode:overlay"/>'
+  const bgRect =
+    bgFill !== "none"
+      ? `<rect width="100" height="100" fill="${bgFill}"/>`
       : "";
-  const patternRect = showBg && state.pattern && state.pattern !== "none" ? '<rect width="100" height="100" fill="url(#bg-pattern)"/>' : "";
-  const noiseRect = showBg && (state.noise ?? 0) > 0 ? `<rect width="100" height="100" filter="url(#bg-noise)" opacity="${Math.min(1, (state.noise ?? 0) / 100)}" style="mix-blend-mode:overlay"/>` : "";
-  const innerBorderRect = showBg && state.innerBorder
-    ? `<rect x="${pad + 1}" y="${pad + 1}" width="${innerSize - 2}" height="${innerSize - 2}" rx="${Math.max(2, (state.maskRadius ?? 22) - 1)}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>`
-    : "";
+  const glossRect =
+    showBg && state.gloss === "top"
+      ? '<rect width="100" height="100" fill="url(#bg-top-gloss)" style="mix-blend-mode:screen"/>'
+      : showBg && state.gloss === "bevel"
+        ? '<rect width="100" height="100" fill="url(#bg-bevel-gloss)" style="mix-blend-mode:overlay"/>'
+        : "";
+  const patternRect =
+    showBg && state.pattern && state.pattern !== "none"
+      ? '<rect width="100" height="100" fill="url(#bg-pattern)"/>'
+      : "";
+  const noiseRect =
+    showBg && (state.noise ?? 0) > 0
+      ? `<rect width="100" height="100" filter="url(#bg-noise)" opacity="${Math.min(1, (state.noise ?? 0) / 100)}" style="mix-blend-mode:overlay"/>`
+      : "";
+  const innerBorderRect =
+    showBg && state.innerBorder
+      ? `<rect x="${pad + 1}" y="${pad + 1}" width="${innerSize - 2}" height="${innerSize - 2}" rx="${Math.max(2, (state.maskRadius ?? 22) - 1)}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>`
+      : "";
 
   // 阴影计算
   const sPreset = state.shadowPreset ?? (state.shadow ? "soft" : "none");
-  const sX = state.shadowOffsetX ?? (sPreset === "soft" ? 0 : sPreset === "hard" ? 4 : sPreset === "long" ? 12 : 0);
-  const sY = state.shadowOffsetY ?? (sPreset === "soft" ? 4 : sPreset === "hard" ? 6 : sPreset === "long" ? 14 : 0);
-  const sBlur = state.shadowBlur ?? (sPreset === "soft" ? 10 : sPreset === "hard" ? 0 : sPreset === "long" ? 8 : 0);
+  const sX =
+    state.shadowOffsetX ??
+    (sPreset === "soft"
+      ? 0
+      : sPreset === "hard"
+        ? 4
+        : sPreset === "long"
+          ? 12
+          : 0);
+  const sY =
+    state.shadowOffsetY ??
+    (sPreset === "soft"
+      ? 4
+      : sPreset === "hard"
+        ? 6
+        : sPreset === "long"
+          ? 14
+          : 0);
+  const sBlur =
+    state.shadowBlur ??
+    (sPreset === "soft"
+      ? 10
+      : sPreset === "hard"
+        ? 0
+        : sPreset === "long"
+          ? 8
+          : 0);
   const sAlpha = (state.shadowAlpha ?? (sPreset === "none" ? 0 : 30)) / 100;
   const sColor = state.shadowColor || "#000000";
 
-  const shadowFilter = sPreset !== "none" && (sBlur > 0 || sX !== 0 || sY !== 0)
-    ? `<filter id="app-shadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="${sX}" dy="${sY}" stdDeviation="${sBlur / 2}" flood-color="${escapeXml(sColor)}" flood-opacity="${sAlpha}"/></filter>`
-    : "";
+  const shadowFilter =
+    sPreset !== "none" && (sBlur > 0 || sX !== 0 || sY !== 0)
+      ? `<filter id="app-shadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="${sX}" dy="${sY}" stdDeviation="${sBlur / 2}" flood-color="${escapeXml(sColor)}" flood-opacity="${sAlpha}"/></filter>`
+      : "";
 
   const glowFilter = state.glowEnabled
     ? `<filter id="app-glow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="0" stdDeviation="${Math.max(1, (state.glowBlur ?? 8) / 2)}" flood-color="${escapeXml(state.glowColor || "#0f766e")}" flood-opacity="0.8"/></filter>`
@@ -231,11 +304,16 @@ export function createSvgMarkup(state: ExportDesignState) {
   // 内部主体图标
   const iconTransform = `translate(${50 + (state.dx ?? 0)} ${50 + (state.dy ?? 0)}) rotate(${state.rotation ?? 0}) scale(${(state.scale ?? 60) / 60}) translate(-50 -50)`;
   const remote = state.iconSvg ? extractRemoteSvg(state.iconSvg) : undefined;
-  const builtin = !remote ? BUILTIN_ICONS.find((i) => i.n === state.shape) : undefined;
+  const builtin = !remote
+    ? BUILTIN_ICONS.find(i => i.n === state.shape)
+    : undefined;
   const baseShapeRaw = shapes[state.shape] || shapes.spark;
   const shapedMarkup = isFgGradient
     ? baseShapeRaw.replace(/fill="currentColor"/g, `fill="${fgPaint}"`)
-    : baseShapeRaw.replace(/fill="currentColor"/g, `fill="${escapeXml(state.fg || "#0f766e")}"`);
+    : baseShapeRaw.replace(
+        /fill="currentColor"/g,
+        `fill="${escapeXml(state.fg || "#0f766e")}"`
+      );
 
   let iconMarkup = "";
   if (state.sourceMode === "text" && state.customText) {
@@ -277,7 +355,9 @@ export function createSvgMarkup(state: ExportDesignState) {
     if (bStyle === "corner") {
       // 斜角飘带
       let polyPoints = "";
-      let textX = 0, textY = 0, rot = 0;
+      let textX = 0,
+        textY = 0,
+        rot = 0;
       if (bPos === "top-right") {
         polyPoints = "60,0 100,0 100,40 80,40 100,20 100,0 40,0 0,0 100,100";
         // 45度斜角多边形
@@ -341,11 +421,15 @@ export function createSvgMarkup(state: ExportDesignState) {
     ${patternRect}
     ${noiseRect}
     ${innerBorderRect}
-    ${showFg ? `<g transform="translate(50 50) scale(0.5) translate(-50 -50)">
+    ${
+      showFg
+        ? `<g transform="translate(50 50) scale(0.5) translate(-50 -50)">
       <g color="${escapeXml(state.fg)}" fill="${fgPaint}" transform="${iconTransform}"${filterAttr}${strokeAttr}>
         ${iconMarkup}
       </g>
-    </g>` : ""}
+    </g>`
+        : ""
+    }
     ${badgeMarkup}
   </g>
 </svg>`;
@@ -368,7 +452,9 @@ export function downloadBlob(blob: Blob, filename: string) {
 
 export async function renderSvgToCanvas(state: ExportDesignState) {
   const svg = createSvgMarkup(state);
-  const svgUrl = URL.createObjectURL(blobFromText(svg, "image/svg+xml;charset=utf-8"));
+  const svgUrl = URL.createObjectURL(
+    blobFromText(svg, "image/svg+xml;charset=utf-8")
+  );
   try {
     const image = new Image();
     image.decoding = "async";
@@ -386,16 +472,26 @@ export async function renderSvgToCanvas(state: ExportDesignState) {
   }
 }
 
-export async function canvasBlob(canvas: HTMLCanvasElement, type: "image/png" | "image/webp") {
+export async function canvasBlob(
+  canvas: HTMLCanvasElement,
+  type: "image/png" | "image/webp"
+) {
   return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("浏览器无法生成位图")), type, 0.94);
+    canvas.toBlob(
+      blob => (blob ? resolve(blob) : reject(new Error("浏览器无法生成位图"))),
+      type,
+      0.94
+    );
   });
 }
 
 /**
  * 为指定设计状态生成 ICO 格式 Blob（默认打包 16, 32, 48, 64, 128, 256 多分辨率）
  */
-export async function createIcoBlob(state: ExportDesignState, sizes: number[] = [16, 32, 48, 64, 128, 256]): Promise<Blob> {
+export async function createIcoBlob(
+  state: ExportDesignState,
+  sizes: number[] = [16, 32, 48, 64, 128, 256]
+): Promise<Blob> {
   const images: IcoImageSource[] = [];
   for (const size of sizes) {
     const canvas = await renderSvgToCanvas({ ...state, size });
@@ -406,57 +502,157 @@ export async function createIcoBlob(state: ExportDesignState, sizes: number[] = 
   return encodeIco(images);
 }
 
-export async function exportFormat(state: ExportDesignState, format: ExportFormat) {
-  const baseName = (state.appName.trim() || "qm-icon").replace(/[^a-zA-Z0-9\u4e00-\u9fff-_]+/g, "-");
+export async function exportFormat(
+  state: ExportDesignState,
+  format: ExportFormat
+) {
+  const baseName = (state.appName.trim() || "qm-icon").replace(
+    /[^a-zA-Z0-9\u4e00-\u9fff-_]+/g,
+    "-"
+  );
   if (format === "SVG") {
-    downloadBlob(blobFromText(createSvgMarkup(state), "image/svg+xml;charset=utf-8"), `${baseName}-${state.size}.svg`);
+    downloadBlob(
+      blobFromText(createSvgMarkup(state), "image/svg+xml;charset=utf-8"),
+      `${baseName}-${state.size}.svg`
+    );
     return;
   }
   if (format === "ICO") {
     // ICO 单独导出包含常用全尺寸或当前指定尺寸的合一文件
-    const targetSizes = state.size > 256 ? [16, 32, 48, 64, 128, 256] : Array.from(new Set([16, 32, 48, 64, 128, 256, state.size])).sort((a, b) => a - b);
+    const targetSizes =
+      state.size > 256
+        ? [16, 32, 48, 64, 128, 256]
+        : Array.from(new Set([16, 32, 48, 64, 128, 256, state.size])).sort(
+            (a, b) => a - b
+          );
     const icoBlob = await createIcoBlob(state, targetSizes);
     downloadBlob(icoBlob, `${baseName}.ico`);
     return;
   }
   const canvas = await renderSvgToCanvas(state);
-  const blob = await canvasBlob(canvas, format === "PNG" ? "image/png" : "image/webp");
+  const blob = await canvasBlob(
+    canvas,
+    format === "PNG" ? "image/png" : "image/webp"
+  );
   downloadBlob(blob, `${baseName}-${state.size}.${format.toLowerCase()}`);
 }
 
 export type ExportPlatform = "android" | "ios" | "web" | "macos" | "windows";
 
-type PlatformVariant = { pixels: number; label: string; path: string; stem: string };
+type PlatformVariant = {
+  pixels: number;
+  label: string;
+  path: string;
+  stem: string;
+};
 
-export const PLATFORM_PRESETS: Record<ExportPlatform, { label: string; variants: PlatformVariant[] }> = {
+export const PLATFORM_PRESETS: Record<
+  ExportPlatform,
+  { label: string; variants: PlatformVariant[] }
+> = {
   android: {
     label: "Android",
     variants: [
-      { pixels: 48, label: "mdpi", path: "Android/mipmap-mdpi", stem: "ic_launcher" },
-      { pixels: 72, label: "hdpi", path: "Android/mipmap-hdpi", stem: "ic_launcher" },
-      { pixels: 96, label: "xhdpi", path: "Android/mipmap-xhdpi", stem: "ic_launcher" },
-      { pixels: 144, label: "xxhdpi", path: "Android/mipmap-xxhdpi", stem: "ic_launcher" },
-      { pixels: 192, label: "xxxhdpi", path: "Android/mipmap-xxxhdpi", stem: "ic_launcher" },
+      {
+        pixels: 48,
+        label: "mdpi",
+        path: "Android/mipmap-mdpi",
+        stem: "ic_launcher",
+      },
+      {
+        pixels: 72,
+        label: "hdpi",
+        path: "Android/mipmap-hdpi",
+        stem: "ic_launcher",
+      },
+      {
+        pixels: 96,
+        label: "xhdpi",
+        path: "Android/mipmap-xhdpi",
+        stem: "ic_launcher",
+      },
+      {
+        pixels: 144,
+        label: "xxhdpi",
+        path: "Android/mipmap-xxhdpi",
+        stem: "ic_launcher",
+      },
+      {
+        pixels: 192,
+        label: "xxxhdpi",
+        path: "Android/mipmap-xxxhdpi",
+        stem: "ic_launcher",
+      },
     ],
   },
   ios: {
     label: "iOS",
     variants: [
-      { pixels: 40, label: "20pt @2x", path: "iOS/AppIcon.appiconset", stem: "icon-20@2x" },
-      { pixels: 60, label: "20pt @3x", path: "iOS/AppIcon.appiconset", stem: "icon-20@3x" },
-      { pixels: 58, label: "29pt @2x", path: "iOS/AppIcon.appiconset", stem: "icon-29@2x" },
-      { pixels: 120, label: "60pt @2x", path: "iOS/AppIcon.appiconset", stem: "icon-60@2x" },
-      { pixels: 152, label: "76pt @2x", path: "iOS/AppIcon.appiconset", stem: "icon-76@2x" },
-      { pixels: 167, label: "83.5pt @2x", path: "iOS/AppIcon.appiconset", stem: "icon-83.5@2x" },
-      { pixels: 1024, label: "App Store", path: "iOS/AppIcon.appiconset", stem: "icon-1024" },
+      {
+        pixels: 40,
+        label: "20pt @2x",
+        path: "iOS/AppIcon.appiconset",
+        stem: "icon-20@2x",
+      },
+      {
+        pixels: 60,
+        label: "20pt @3x",
+        path: "iOS/AppIcon.appiconset",
+        stem: "icon-20@3x",
+      },
+      {
+        pixels: 58,
+        label: "29pt @2x",
+        path: "iOS/AppIcon.appiconset",
+        stem: "icon-29@2x",
+      },
+      {
+        pixels: 120,
+        label: "60pt @2x",
+        path: "iOS/AppIcon.appiconset",
+        stem: "icon-60@2x",
+      },
+      {
+        pixels: 152,
+        label: "76pt @2x",
+        path: "iOS/AppIcon.appiconset",
+        stem: "icon-76@2x",
+      },
+      {
+        pixels: 167,
+        label: "83.5pt @2x",
+        path: "iOS/AppIcon.appiconset",
+        stem: "icon-83.5@2x",
+      },
+      {
+        pixels: 1024,
+        label: "App Store",
+        path: "iOS/AppIcon.appiconset",
+        stem: "icon-1024",
+      },
     ],
   },
   web: {
     label: "Web-PWA",
     variants: [
-      { pixels: 16, label: "favicon 16", path: "Web-PWA/favicon", stem: "favicon-16" },
-      { pixels: 32, label: "favicon 32", path: "Web-PWA/favicon", stem: "favicon-32" },
-      { pixels: 48, label: "favicon 48", path: "Web-PWA/favicon", stem: "favicon-48" },
+      {
+        pixels: 16,
+        label: "favicon 16",
+        path: "Web-PWA/favicon",
+        stem: "favicon-16",
+      },
+      {
+        pixels: 32,
+        label: "favicon 32",
+        path: "Web-PWA/favicon",
+        stem: "favicon-32",
+      },
+      {
+        pixels: 48,
+        label: "favicon 48",
+        path: "Web-PWA/favicon",
+        stem: "favicon-48",
+      },
       { pixels: 192, label: "PWA 192", path: "Web-PWA/icons", stem: "pwa-192" },
       { pixels: 512, label: "PWA 512", path: "Web-PWA/icons", stem: "pwa-512" },
     ],
@@ -465,11 +661,36 @@ export const PLATFORM_PRESETS: Record<ExportPlatform, { label: string; variants:
     label: "macOS",
     variants: [
       { pixels: 16, label: "16", path: "macOS.iconset", stem: "icon_16x16" },
-      { pixels: 32, label: "16@2x", path: "macOS.iconset", stem: "icon_16x16@2x" },
-      { pixels: 128, label: "128", path: "macOS.iconset", stem: "icon_128x128" },
-      { pixels: 256, label: "128@2x", path: "macOS.iconset", stem: "icon_128x128@2x" },
-      { pixels: 512, label: "256@2x", path: "macOS.iconset", stem: "icon_256x256@2x" },
-      { pixels: 1024, label: "512@2x", path: "macOS.iconset", stem: "icon_512x512@2x" },
+      {
+        pixels: 32,
+        label: "16@2x",
+        path: "macOS.iconset",
+        stem: "icon_16x16@2x",
+      },
+      {
+        pixels: 128,
+        label: "128",
+        path: "macOS.iconset",
+        stem: "icon_128x128",
+      },
+      {
+        pixels: 256,
+        label: "128@2x",
+        path: "macOS.iconset",
+        stem: "icon_128x128@2x",
+      },
+      {
+        pixels: 512,
+        label: "256@2x",
+        path: "macOS.iconset",
+        stem: "icon_256x256@2x",
+      },
+      {
+        pixels: 1024,
+        label: "512@2x",
+        path: "macOS.iconset",
+        stem: "icon_512x512@2x",
+      },
     ],
   },
   windows: {
@@ -493,30 +714,87 @@ export type ZipPlanEntry = {
   files: string[];
 };
 
-export function getZipPlatforms(selectedPlatforms: ExportPlatform[]): ExportPlatform[] {
+export function getZipPlatforms(
+  selectedPlatforms: ExportPlatform[]
+): ExportPlatform[] {
   return selectedPlatforms.length ? selectedPlatforms : ["web"];
 }
 
-export function buildZipPlan(selectedPlatforms: ExportPlatform[]): ZipPlanEntry[] {
-  return getZipPlatforms(selectedPlatforms).flatMap((platform) => {
+export function buildZipPlan(
+  selectedPlatforms: ExportPlatform[]
+): ZipPlanEntry[] {
+  return getZipPlatforms(selectedPlatforms).flatMap(platform => {
     const preset = PLATFORM_PRESETS[platform];
-    return preset.variants.map((variant) => {
+    return preset.variants.map(variant => {
       const basePath = `${variant.path}/${variant.stem}`;
-      const files = platform === "windows"
-        ? [`${basePath}.png`, `${basePath}.webp`, `${basePath}.svg`, `${basePath}.ico`]
-        : [`${basePath}.png`, `${basePath}.webp`, `${basePath}.svg`];
-      return { platform, platformLabel: preset.label, pixels: variant.pixels, variantLabel: variant.label, files };
+      const files =
+        platform === "windows"
+          ? [
+              `${basePath}.png`,
+              `${basePath}.webp`,
+              `${basePath}.svg`,
+              `${basePath}.ico`,
+            ]
+          : [`${basePath}.png`, `${basePath}.webp`, `${basePath}.svg`];
+      return {
+        platform,
+        platformLabel: preset.label,
+        pixels: variant.pixels,
+        variantLabel: variant.label,
+        files,
+      };
     });
   });
 }
 
 function iosContents(variants: PlatformVariant[]) {
-  const sizeByPixels: Record<number, string> = { 40: "20x20", 60: "20x20", 58: "29x29", 120: "60x60", 152: "76x76", 167: "83.5x83.5", 1024: "1024x1024" };
-  return JSON.stringify({ images: variants.map((variant) => ({ filename: `${variant.stem}.png`, idiom: "universal", scale: variant.pixels === 1024 ? "1x" : variant.label.includes("@3x") ? "3x" : "2x", size: sizeByPixels[variant.pixels] || `${variant.pixels}x${variant.pixels}` })), info: { author: "xcode", version: 1 } }, null, 2);
+  const sizeByPixels: Record<number, string> = {
+    40: "20x20",
+    60: "20x20",
+    58: "29x29",
+    120: "60x60",
+    152: "76x76",
+    167: "83.5x83.5",
+    1024: "1024x1024",
+  };
+  return JSON.stringify(
+    {
+      images: variants.map(variant => ({
+        filename: `${variant.stem}.png`,
+        idiom: "universal",
+        scale:
+          variant.pixels === 1024
+            ? "1x"
+            : variant.label.includes("@3x")
+              ? "3x"
+              : "2x",
+        size:
+          sizeByPixels[variant.pixels] || `${variant.pixels}x${variant.pixels}`,
+      })),
+      info: { author: "xcode", version: 1 },
+    },
+    null,
+    2
+  );
 }
 
 function macContents(variants: PlatformVariant[]) {
-  return JSON.stringify({ images: variants.map((variant) => ({ filename: `${variant.stem}.png`, idiom: "mac", scale: variant.label.includes("@2x") ? "2x" : "1x", size: variant.label.replace("@2x", "") + "x" + variant.label.replace("@2x", "") })), info: { author: "xcode", version: 1 } }, null, 2);
+  return JSON.stringify(
+    {
+      images: variants.map(variant => ({
+        filename: `${variant.stem}.png`,
+        idiom: "mac",
+        scale: variant.label.includes("@2x") ? "2x" : "1x",
+        size:
+          variant.label.replace("@2x", "") +
+          "x" +
+          variant.label.replace("@2x", ""),
+      })),
+      info: { author: "xcode", version: 1 },
+    },
+    null,
+    2
+  );
 }
 
 function webManifest(appName: string) {
@@ -538,7 +816,10 @@ function webManifest(appName: string) {
   );
 }
 
-export function getPlatformConfigFiles(platform: ExportPlatform, appName: string = ""): string[] {
+export function getPlatformConfigFiles(
+  platform: ExportPlatform,
+  appName: string = ""
+): string[] {
   if (platform === "android") {
     return [
       "Android/mipmap-anydpi-v26/ic_launcher.xml",
@@ -550,28 +831,48 @@ export function getPlatformConfigFiles(platform: ExportPlatform, appName: string
   if (platform === "ios") return ["iOS/AppIcon.appiconset/Contents.json"];
   if (platform === "macos") return ["macOS.iconset/Contents.json"];
   if (platform === "windows") return ["Windows/icon.ico", "Windows/app.ico"];
-  if (platform === "web") return ["Web-PWA/manifest.json", "Web-PWA/favicon/favicon.ico"];
+  if (platform === "web")
+    return ["Web-PWA/manifest.json", "Web-PWA/favicon/favicon.ico"];
   return [];
 }
 
-function platformConfigFiles(platform: ExportPlatform, variants: PlatformVariant[], appName: string) {
-  if (platform === "android") return {
-    "Android/mipmap-anydpi-v26/ic_launcher.xml": `<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background"/><foreground android:drawable="@drawable/ic_launcher_foreground"/></adaptive-icon>\n`,
-    "Android/mipmap-anydpi-v26/ic_launcher_round.xml": `<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background"/><foreground android:drawable="@drawable/ic_launcher_foreground"/></adaptive-icon>\n`,
-    "Android/res/values/colors.xml": `<?xml version="1.0" encoding="utf-8"?>\n<resources><color name="ic_launcher_background">#F6F7FA</color></resources>\n`,
-    "Android/res/drawable/ic_launcher_foreground.xml": `<?xml version="1.0" encoding="utf-8"?>\n<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="100" android:viewportHeight="100"><path android:fillColor="#0F766E" android:pathData="M50,7 L60,39 L93,50 L60,61 L50,94 L40,61 L7,50 L40,39 Z"/></vector>\n`,
-  };
-  if (platform === "ios") return { "iOS/AppIcon.appiconset/Contents.json": iosContents(variants) };
-  if (platform === "macos") return { "macOS.iconset/Contents.json": macContents(variants) };
-  if (platform === "web") return { "Web-PWA/manifest.json": webManifest(appName) };
+function platformConfigFiles(
+  platform: ExportPlatform,
+  variants: PlatformVariant[],
+  appName: string
+) {
+  if (platform === "android")
+    return {
+      "Android/mipmap-anydpi-v26/ic_launcher.xml": `<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background"/><foreground android:drawable="@drawable/ic_launcher_foreground"/></adaptive-icon>\n`,
+      "Android/mipmap-anydpi-v26/ic_launcher_round.xml": `<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background"/><foreground android:drawable="@drawable/ic_launcher_foreground"/></adaptive-icon>\n`,
+      "Android/res/values/colors.xml": `<?xml version="1.0" encoding="utf-8"?>\n<resources><color name="ic_launcher_background">#F6F7FA</color></resources>\n`,
+      "Android/res/drawable/ic_launcher_foreground.xml": `<?xml version="1.0" encoding="utf-8"?>\n<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="100" android:viewportHeight="100"><path android:fillColor="#0F766E" android:pathData="M50,7 L60,39 L93,50 L60,61 L50,94 L40,61 L7,50 L40,39 Z"/></vector>\n`,
+    };
+  if (platform === "ios")
+    return { "iOS/AppIcon.appiconset/Contents.json": iosContents(variants) };
+  if (platform === "macos")
+    return { "macOS.iconset/Contents.json": macContents(variants) };
+  if (platform === "web")
+    return { "Web-PWA/manifest.json": webManifest(appName) };
   return {};
 }
 
-export async function exportZip(state: ExportDesignState, selectedPlatforms: ExportPlatform[]) {
-  const baseName = (state.appName.trim() || "qm-icon").replace(/[^a-zA-Z0-9\u4e00-\u9fff-_]+/g, "-");
+export async function exportZip(
+  state: ExportDesignState,
+  selectedPlatforms: ExportPlatform[]
+) {
+  const baseName = (state.appName.trim() || "qm-icon").replace(
+    /[^a-zA-Z0-9\u4e00-\u9fff-_]+/g,
+    "-"
+  );
   const platforms = getZipPlatforms(selectedPlatforms);
   const zip = new JSZip();
-  const manifest: Array<{ platform: string; label: string; pixels: number; files: string[] }> = [];
+  const manifest: Array<{
+    platform: string;
+    label: string;
+    pixels: number;
+    files: string[];
+  }> = [];
   let fileCount = 0;
 
   for (const platform of platforms) {
@@ -590,25 +891,54 @@ export async function exportZip(state: ExportDesignState, selectedPlatforms: Exp
 
       if (platform === "windows") {
         // 单尺寸 ICO
-        const singleIco = encodeIco([{ width: variant.pixels, height: variant.pixels, data: pngBytes }]);
-        const files = [`${basePath}.png`, `${basePath}.webp`, `${basePath}.svg`, `${basePath}.ico`];
+        const singleIco = encodeIco([
+          { width: variant.pixels, height: variant.pixels, data: pngBytes },
+        ]);
+        const files = [
+          `${basePath}.png`,
+          `${basePath}.webp`,
+          `${basePath}.svg`,
+          `${basePath}.ico`,
+        ];
         zip.file(files[0], png);
         zip.file(files[1], webp);
         zip.file(files[2], svg);
         zip.file(files[3], singleIco);
-        manifest.push({ platform, label: variant.label, pixels: variant.pixels, files });
+        manifest.push({
+          platform,
+          label: variant.label,
+          pixels: variant.pixels,
+          files,
+        });
         fileCount += 4;
-        winImages.push({ width: variant.pixels, height: variant.pixels, data: pngBytes });
+        winImages.push({
+          width: variant.pixels,
+          height: variant.pixels,
+          data: pngBytes,
+        });
       } else {
-        const files = [`${basePath}.png`, `${basePath}.webp`, `${basePath}.svg`];
+        const files = [
+          `${basePath}.png`,
+          `${basePath}.webp`,
+          `${basePath}.svg`,
+        ];
         zip.file(files[0], png);
         zip.file(files[1], webp);
         zip.file(files[2], svg);
-        manifest.push({ platform, label: variant.label, pixels: variant.pixels, files });
+        manifest.push({
+          platform,
+          label: variant.label,
+          pixels: variant.pixels,
+          files,
+        });
         fileCount += 3;
 
         if (platform === "web" && [16, 32, 48].includes(variant.pixels)) {
-          webFaviconImages.push({ width: variant.pixels, height: variant.pixels, data: pngBytes });
+          webFaviconImages.push({
+            width: variant.pixels,
+            height: variant.pixels,
+            data: pngBytes,
+          });
         }
       }
     }
@@ -627,14 +957,20 @@ export async function exportZip(state: ExportDesignState, selectedPlatforms: Exp
       fileCount += 1;
     }
 
-    const configs = platformConfigFiles(platform, preset.variants, state.appName);
+    const configs = platformConfigFiles(
+      platform,
+      preset.variants,
+      state.appName
+    );
     Object.entries(configs).forEach(([path, content]) => {
       zip.file(path, content);
       fileCount += 1;
     });
   }
 
-  const allConfigFiles = platforms.flatMap((platform) => getPlatformConfigFiles(platform, state.appName));
+  const allConfigFiles = platforms.flatMap(platform =>
+    getPlatformConfigFiles(platform, state.appName)
+  );
   zip.file(
     "manifest.json",
     JSON.stringify(
@@ -651,8 +987,11 @@ export async function exportZip(state: ExportDesignState, selectedPlatforms: Exp
     )
   );
 
-  const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
+  const blob = await zip.generateAsync({
+    type: "blob",
+    compression: "DEFLATE",
+    compressionOptions: { level: 6 },
+  });
   downloadBlob(blob, `${baseName}-platform-icons.zip`);
   return { platformCount: platforms.length, fileCount: fileCount + 1 };
 }
-
